@@ -167,7 +167,6 @@ a { color: inherit; }
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-bottom: 1px solid var(--line);
 }
 .record-crate-stage {
   position: absolute;
@@ -180,73 +179,50 @@ a { color: inherit; }
   height: 100%;
   display: block;
 }
-.record-crate-label {
-  position: absolute;
-  right: 0;
-  bottom: 8px;
-  left: 0;
-  z-index: 3;
-  margin: 0;
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  color: #666662;
-  font-size: 9px;
-  letter-spacing: .07em;
-  pointer-events: none;
-}
-.record-crate-label span:last-child {
-  overflow: hidden;
-  color: #8d8d89;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .record-fallback {
   position: absolute;
   inset: 0;
   z-index: 2;
+  display: grid;
+  place-items: center;
   overflow: hidden;
   background: #080808;
-  perspective: 900px;
+  opacity: 1;
+  transition: opacity 180ms ease, visibility 0s;
 }
-.record-fallback-stack {
-  position: absolute;
-  inset: 6% 10% 8%;
-  transform: rotateX(-3deg) rotateY(-6deg);
-  transform-style: preserve-3d;
+.record-fallback.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease, visibility 0s 180ms;
 }
-.record-fallback-sleeve {
+.record-loading-mark {
+  position: relative;
+  width: 48px;
+  height: 34px;
+  opacity: .38;
+  animation: record-loading-pulse 1.4s ease-in-out infinite alternate;
+}
+.record-loading-mark span {
   position: absolute;
-  top: 0;
-  left: 22%;
-  width: 56%;
-  aspect-ratio: 1;
+  bottom: 0;
+  width: 24px;
+  height: 32px;
   border: 1px solid #555a57;
-  object-fit: cover;
+  background: #101110;
   transform-origin: 50% 100%;
-  transition: transform 620ms cubic-bezier(.22, .7, .2, 1);
-  box-shadow: 0 10px 20px rgb(0 0 0 / .28);
 }
-.record-fallback-crate {
-  position: absolute;
-  z-index: 2;
-  top: 12%;
-  right: 12%;
-  bottom: 8%;
-  left: 12%;
-  border-right: 10px solid #292c2a;
-  border-bottom: 14px solid #292c2a;
-  border-left: 10px solid #292c2a;
-  background:
-    linear-gradient(
-      to bottom,
-      transparent 0 48%,
-      #292c2a 48% 52%,
-      transparent 52% 72%,
-      #292c2a 72% 76%,
-      transparent 76%
-    );
-  box-shadow: inset 0 0 0 1px #3d413e;
+.record-loading-mark span:nth-child(1) { left: 0; transform: rotate(-7deg); }
+.record-loading-mark span:nth-child(2) { left: 12px; }
+.record-loading-mark span:nth-child(3) { left: 24px; transform: rotate(7deg); }
+.record-fallback-error {
+  margin: 0;
+  color: #666662;
+  font-size: 9px;
+  letter-spacing: .07em;
+}
+@keyframes record-loading-pulse {
+  from { opacity: .22; transform: translateY(2px); }
+  to { opacity: .48; transform: translateY(0); }
 }
 .machine-main {
   height: calc(100svh - var(--header-height));
@@ -513,16 +489,18 @@ a { color: inherit; }
     line-height: 1.45;
   }
   .about-main {
-    min-height: 0;
+    min-height: calc(100svh - var(--header-height));
     grid-template-columns: 1fr;
-    align-content: start;
-    align-items: start;
+    place-content: center;
+    justify-items: center;
     gap: 28px;
-    padding-top: 32px;
-    padding-bottom: 56px;
+    padding: 32px 0 56px;
+    text-align: center;
   }
-  .about-mark { justify-content: start; }
+  .about-mark { justify-content: center; }
   .logo-large { width: 120px; }
+  .about-main section { display: grid; justify-items: center; }
+  .about-links { justify-content: center; }
 }
 
 @media (max-height: 680px) and (max-width: 899px) {
@@ -541,5 +519,5 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .machine-canvas { cursor: default; }
   .project-list li span { transition: none; }
-  .record-fallback-sleeve { transition: none; }
+  .record-loading-mark { animation: none; }
 }

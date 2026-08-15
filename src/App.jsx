@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import RecordCrateFallback from './RecordCrateFallback.jsx';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 const RecordCrate = lazy(() => import('./RecordCrate.jsx'));
@@ -218,7 +219,7 @@ function ProjectList({ activeIndex, includeMore = false, onActivate, onLeave }) 
       ))}
       {includeMore && (
         <li className="more-row">
-          <a href="/projects"><span>more</span><span aria-hidden="true">↗</span></a>
+          <a href="/projects"><span>all projects</span><span aria-hidden="true">↗</span></a>
         </li>
       )}
     </ol>
@@ -227,6 +228,7 @@ function ProjectList({ activeIndex, includeMore = false, onActivate, onLeave }) 
 
 function HomePage() {
   const [activeProject, setActiveProject] = useState(0);
+  const [activeRow, setActiveRow] = useState(null);
 
   useEffect(() => {
     const automaticQuery = window.matchMedia('(max-width: 760px)');
@@ -236,6 +238,7 @@ function HomePage() {
       interval = undefined;
       if (!automaticQuery.matches) {
         setActiveProject(0);
+        setActiveRow(null);
         return;
       }
       interval = window.setInterval(() => {
@@ -260,14 +263,25 @@ function HomePage() {
 
         <section className="recent" aria-label="projects">
           <ProjectList
-            activeIndex={activeProject}
-            onActivate={setActiveProject}
-            onLeave={() => setActiveProject(0)}
+            activeIndex={activeRow}
+            includeMore
+            onActivate={(index) => {
+              setActiveProject(index);
+              setActiveRow(index);
+            }}
+            onLeave={() => {
+              setActiveProject(0);
+              setActiveRow(null);
+            }}
           />
         </section>
 
         <div className="home-records" aria-label="Project record crate">
-          <Suspense fallback={null}>
+          <Suspense fallback={(
+            <div className="record-crate-stage">
+              <RecordCrateFallback />
+            </div>
+          )}>
             <RecordCrate projects={PROJECTS} activeIndex={activeProject} />
           </Suspense>
         </div>
@@ -359,6 +373,7 @@ function AboutPage() {
             <a href="/projects">view projects</a>
             <a href="https://github.com/selfdrivingjazz" target="_blank" rel="noreferrer">github <span aria-hidden="true">↗</span></a>
             <a href="https://x.com/selfdrivingjazz" target="_blank" rel="noreferrer">x <span aria-hidden="true">↗</span></a>
+            <a href="https://selfdrivingjazz.substack.com" target="_blank" rel="noreferrer">substack <span aria-hidden="true">↗</span></a>
           </div>
         </section>
       </main>

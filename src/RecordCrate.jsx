@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import RecordCrateFallback from './RecordCrateFallback.jsx';
 const CRATE_WIDTH = 3.55;
 const CRATE_DEPTH = 3.18;
 const POST_SIZE = 0.14;
@@ -13,40 +14,17 @@ const RECORD_SPACING = 0.135;
 const BASE_TOP = 0.08;
 const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
 const FRONT_RECORD_Z = -0.6;
-const SUPPORT_Z = POST_Z - POST_SIZE / 2 - 0.025;
+const RIM_TARGET_Y = 1.25;
+const RIM_TARGET_Z = POST_Z;
 const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
 const VIEW_DIRECTION = new THREE.Vector3(1, 0.62, 1.18).normalize();
 
-function RecordFallback({ projects, activeIndex }) {
-  return (
-    <div className="record-fallback" role="img" aria-label={`Record crate showing ${projects[activeIndex].title}`}>
-      <div className="record-fallback-stack" aria-hidden="true">
-        {[...projects].reverse().map((project, reverseIndex) => {
-          const index = projects.length - reverseIndex - 1;
-          const flippedDistance = Math.max(0, activeIndex - index);
-          const transform = index < activeIndex
-            ? `translate3d(${(index - flippedDistance) * 3}px, calc(26% + ${flippedDistance * 3}px), ${flippedDistance * 4}px) rotateX(46deg)`
-            : `translate3d(${index * 2}px, ${index * -2}px, ${index * -3}px)`;
-          return (
-            <img
-              key={project.slug}
-              className="record-fallback-sleeve"
-              src={project.recordCover}
-              alt=""
-              style={{ transform }}
-            />
-          );
-        })}
-      </div>
-      <div className="record-fallback-crate" aria-hidden="true" />
-    </div>
-  );
-}
 
 function RecordCrate({ projects, activeIndex }) {
   const mountRef = useRef(null);
   const activeIndexRef = useRef(activeIndex);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
   activeIndexRef.current = activeIndex;
 
   useEffect(() => {
@@ -137,11 +115,9 @@ function RecordCrate({ projects, activeIndex }) {
     const crateMaterial = new THREE.MeshStandardMaterial({ color: 0x202321, roughness: 0.86, metalness: 0.08 });
     const crateEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x353a37, roughness: 0.78, metalness: 0.12 });
     const sleeveEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x101211, roughness: 0.72, metalness: 0.06 });
-    const sleeveBackMaterial = new THREE.MeshStandardMaterial({ color: 0x171918, roughness: 0.8, metalness: 0.04 });
     materials.add(crateMaterial);
     materials.add(crateEdgeMaterial);
     materials.add(sleeveEdgeMaterial);
-    materials.add(sleeveBackMaterial);
 
     const crate = new THREE.Group();
     crate.rotation.y = -0.08;
@@ -185,17 +161,17 @@ function RecordCrate({ projects, activeIndex }) {
       return FRONT_RECORD_Z - index * RECORD_SPACING;
     }
 
-    function angleForSupport(index, supportZ) {
-      const reach = THREE.MathUtils.clamp(
-        (supportZ - anchorZFor(index)) / SLEEVE_SIZE,
-        -0.96,
-        0.96,
-      );
-      return Math.asin(reach);
-    }
+    const frontRestAngle = Math.atan2(
+      RIM_TARGET_Z - anchorZFor(0),
+      RIM_TARGET_Y - RECORD_ANCHOR_Y,
+    );
+    const backRestAngle = Math.atan2(
+      -RIM_TARGET_Z - anchorZFor(projects.length - 1),
+      RIM_TARGET_Y - RECORD_ANCHOR_Y,
+    );
 
     function angleForSelection(index, selectedIndex) {
-      return angleForSupport(index, index < selectedIndex ? SUPPORT_Z : -SUPPORT_Z);
+      return index < selectedIndex ? frontRestAngle : backRestAngle;
     }
 
     function centerFor(index, angle) {
@@ -205,7 +181,14 @@ function RecordCrate({ projects, activeIndex }) {
       };
     }
 
-    const textureLoader = new THREE.TextureLoader();
+    let disposed = false;
+    const loadingManager = new THREE.LoadingManager();
+    loadingManager.onLoad = () => {
+      requestAnimationFrame(() => {
+        if (!disposed) setReady(true);
+      });
+    };
+    const textureLoader = new THREE.TextureLoader(loadingManager);
     const records = projects.map((project, index) => {
       const texture = textureLoader.load(project.recordCover);
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -222,7 +205,7 @@ function RecordCrate({ projects, activeIndex }) {
         sleeveEdgeMaterial,
         sleeveEdgeMaterial,
         coverMaterial,
-        sleeveBackMaterial,
+        coverMaterial,
       ]);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -255,7 +238,7 @@ function RecordCrate({ projects, activeIndex }) {
         maxForce: 40,
       });
       hinge.enableMotor();
-      hinge.setMotorMaxForce(7);
+      hinge.setMotorMaxForce(3);
       world.addConstraint(hinge);
 
       return { mesh, body, hinge };
@@ -296,9 +279,8 @@ function RecordCrate({ projects, activeIndex }) {
     syncRecordMeshes();
 
     const framingPoints = [];
-    for (const supportZ of [-SUPPORT_Z, SUPPORT_Z]) {
+    for (const angle of [backRestAngle, frontRestAngle]) {
       for (const [index, { mesh }] of records.entries()) {
-        const angle = angleForSupport(index, supportZ);
         const center = centerFor(index, angle);
         mesh.position.set(0, center.y, center.z);
         mesh.rotation.set(angle, 0, 0);
@@ -370,6 +352,7 @@ function RecordCrate({ projects, activeIndex }) {
     render();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
       renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
@@ -383,11 +366,7 @@ function RecordCrate({ projects, activeIndex }) {
 
   return (
     <div className="record-crate-stage" ref={mountRef}>
-      {failed && <RecordFallback projects={projects} activeIndex={activeIndex} />}
-      <p className="record-crate-label" aria-live="polite">
-        <span>{projects[activeIndex].label}</span>
-        <span>{projects[activeIndex].title}</span>
-      </p>
+      <RecordCrateFallback hidden={ready && !failed} failed={failed} />
     </div>
   );
 }
