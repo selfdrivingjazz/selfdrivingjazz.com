@@ -178,6 +178,13 @@ a { color: inherit; }
   width: 100%;
   height: 100%;
   display: block;
+  cursor: grab;
+  touch-action: none;
+}
+.record-crate-canvas.is-dragging { cursor: grabbing; }
+.record-crate-canvas:focus-visible {
+  outline: 1px solid #555a57;
+  outline-offset: -1px;
 }
 .record-fallback {
   position: absolute;

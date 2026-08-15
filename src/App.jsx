@@ -219,7 +219,13 @@ function ProjectList({ activeIndex, includeMore = false, onActivate, onLeave }) 
       ))}
       {includeMore && (
         <li className="more-row">
-          <a href="/projects"><span>all projects</span><span aria-hidden="true">↗</span></a>
+          <a
+            href="/projects"
+            onFocus={() => onActivate?.(null)}
+            onMouseEnter={() => onActivate?.(null)}
+          >
+            <span>all projects</span><span aria-hidden="true">↗</span>
+          </a>
         </li>
       )}
     </ol>
@@ -266,7 +272,7 @@ function HomePage() {
             activeIndex={activeRow}
             includeMore
             onActivate={(index) => {
-              setActiveProject(index);
+              setActiveProject(index ?? 0);
               setActiveRow(index);
             }}
             onLeave={() => {
@@ -282,7 +288,14 @@ function HomePage() {
               <RecordCrateFallback />
             </div>
           )}>
-            <RecordCrate projects={PROJECTS} activeIndex={activeProject} />
+            <RecordCrate
+              projects={PROJECTS}
+              activeIndex={activeProject}
+              onAdvance={() => {
+                setActiveProject((index) => (index + 1) % PROJECTS.length);
+                setActiveRow(null);
+              }}
+            />
           </Suspense>
         </div>
       </main>

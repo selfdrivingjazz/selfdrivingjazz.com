@@ -18,14 +18,19 @@ const RIM_TARGET_Y = 1.25;
 const RIM_TARGET_Z = POST_Z;
 const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
 const VIEW_DIRECTION = new THREE.Vector3(1, 0.62, 1.18).normalize();
+const FRONT_CRATE_ROTATION = -0.08;
+const ROTATION_PER_PIXEL = 0.008;
+const DRAG_THRESHOLD = 5;
 
 
-function RecordCrate({ projects, activeIndex }) {
+function RecordCrate({ projects, activeIndex, onAdvance }) {
   const mountRef = useRef(null);
   const activeIndexRef = useRef(activeIndex);
+  const onAdvanceRef = useRef(onAdvance);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   activeIndexRef.current = activeIndex;
+  onAdvanceRef.current = onAdvance;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -56,8 +61,12 @@ function RecordCrate({ projects, activeIndex }) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.className = 'record-crate-canvas';
-    renderer.domElement.setAttribute('role', 'img');
-    renderer.domElement.setAttribute('aria-label', 'A three-dimensional crate of project records.');
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.setAttribute('role', 'button');
+    renderer.domElement.setAttribute(
+      'aria-label',
+      'Interactive three-dimensional crate of project records. Click to advance; drag to rotate.',
+    );
     mount.append(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -120,7 +129,7 @@ function RecordCrate({ projects, activeIndex }) {
     materials.add(sleeveEdgeMaterial);
 
     const crate = new THREE.Group();
-    crate.rotation.y = -0.08;
+    crate.rotation.y = FRONT_CRATE_ROTATION;
     scene.add(crate);
 
     const crateBody = new CANNON.Body({
@@ -329,11 +338,76 @@ function RecordCrate({ projects, activeIndex }) {
       renderer.setSize(width, height, false);
     }
 
+    let targetCrateRotation = FRONT_CRATE_ROTATION;
+    let pointerGesture;
+
+    function resetCrateRotation() {
+      targetCrateRotation = FRONT_CRATE_ROTATION;
+    }
+
+    function advanceCrate() {
+      resetCrateRotation();
+      onAdvanceRef.current?.();
+    }
+
+    function handlePointerDown(event) {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (pointerGesture) return;
+      event.preventDefault();
+      renderer.domElement.setPointerCapture(event.pointerId);
+      renderer.domElement.classList.add('is-dragging');
+      pointerGesture = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startRotation: crate.rotation.y,
+        dragged: false,
+      };
+    }
+
+    function handlePointerMove(event) {
+      if (!pointerGesture || event.pointerId !== pointerGesture.pointerId) return;
+      const distance = event.clientX - pointerGesture.startX;
+      if (Math.abs(distance) >= DRAG_THRESHOLD) pointerGesture.dragged = true;
+      if (!pointerGesture.dragged) return;
+      targetCrateRotation = pointerGesture.startRotation + distance * ROTATION_PER_PIXEL;
+      crate.rotation.y = targetCrateRotation;
+    }
+
+    function finishPointerGesture(event, cancelled = false) {
+      if (!pointerGesture || event.pointerId !== pointerGesture.pointerId) return;
+      const shouldAdvance = !cancelled && !pointerGesture.dragged;
+      pointerGesture = undefined;
+      renderer.domElement.classList.remove('is-dragging');
+      if (renderer.domElement.hasPointerCapture(event.pointerId)) {
+        renderer.domElement.releasePointerCapture(event.pointerId);
+      }
+      if (shouldAdvance) advanceCrate();
+    }
+
+    function handlePointerUp(event) {
+      finishPointerGesture(event);
+    }
+
+    function handlePointerCancel(event) {
+      finishPointerGesture(event, true);
+    }
+
+    function handleKeyDown(event) {
+      if (event.repeat || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      advanceCrate();
+    }
+
     function handleContextLost(event) {
       event.preventDefault();
       setFailed(true);
     }
     renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
+    renderer.domElement.addEventListener('pointerdown', handlePointerDown);
+    renderer.domElement.addEventListener('pointermove', handlePointerMove);
+    renderer.domElement.addEventListener('pointerup', handlePointerUp);
+    renderer.domElement.addEventListener('pointercancel', handlePointerCancel);
+    renderer.domElement.addEventListener('keydown', handleKeyDown);
 
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
@@ -343,6 +417,11 @@ function RecordCrate({ projects, activeIndex }) {
     let animationFrame;
     function render() {
       const delta = Math.min(0.05, clock.getDelta());
+      const rotationDelta = Math.atan2(
+        Math.sin(targetCrateRotation - crate.rotation.y),
+        Math.cos(targetCrateRotation - crate.rotation.y),
+      );
+      crate.rotation.y += rotationDelta * (1 - Math.exp(-delta * 12));
       driveRecords();
       world.step(1 / 60, delta, 3);
       syncRecordMeshes();
@@ -356,6 +435,11 @@ function RecordCrate({ projects, activeIndex }) {
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
       renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+      renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+      renderer.domElement.removeEventListener('pointermove', handlePointerMove);
+      renderer.domElement.removeEventListener('pointerup', handlePointerUp);
+      renderer.domElement.removeEventListener('pointercancel', handlePointerCancel);
+      renderer.domElement.removeEventListener('keydown', handleKeyDown);
       for (const texture of textures) texture.dispose();
       for (const geometry of geometries) geometry.dispose();
       for (const material of materials) material.dispose();
