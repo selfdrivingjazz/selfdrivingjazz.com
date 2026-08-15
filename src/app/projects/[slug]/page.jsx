@@ -50,31 +50,39 @@ export default async function ProjectDetailPage({ params }) {
       <JsonLd data={projectData} />
       <main className="shell-main detail-main">
         <article className="project-detail">
-          <header className="detail-header">
-            <div className="detail-kicker">
-              <span>{project.label}</span>
-              <Link href="/projects">all projects</Link>
-            </div>
-            <h1>{project.title}</h1>
-            <p>{project.summary}</p>
-            <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
-              visit project <span aria-hidden="true">↗</span>
-            </a>
-          </header>
+          <div className="detail-kicker">
+            <span>{project.label}</span>
+            <Link href="/projects">all projects</Link>
+          </div>
 
-          <figure className="project-cover">
-            <Image
-              src={project.coverUrl}
-              width={1800}
-              height={1350}
-              sizes="(min-width: 761px) 960px, calc(100vw - 36px)"
-              alt={project.coverAlt}
-              priority
-            />
-            <figcaption>{project.creditLabel ?? 'Photo'}: <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a>{project.creditSuffix ?? ' / Unsplash'}</figcaption>
-          </figure>
+          <div className="detail-hero">
+            <header className="detail-header">
+              <h1>{project.title}</h1>
+              <p>{project.summary}</p>
+              <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
+                visit project <span aria-hidden="true">↗</span>
+              </a>
+            </header>
 
-          <div className="project-body">
+            <figure className="project-cover">
+              <Image
+                src={project.coverUrl}
+                width={1600}
+                height={1600}
+                sizes="(min-width: 900px) 620px, (min-width: 761px) 680px, calc(100vw - 36px)"
+                alt={project.coverAlt}
+                priority
+              />
+              <figcaption>{project.creditLabel ?? 'Photo'}: <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a>{project.creditSuffix ?? ' / Unsplash'}</figcaption>
+            </figure>
+          </div>
+
+          <a className="detail-scroll" href="#project-details">
+            <span>project details</span>
+            <span aria-hidden="true">↓</span>
+          </a>
+
+          <div className="project-body" id="project-details">
             <dl className="project-meta">
               <div><dt>year</dt><dd>{project.year}</dd></div>
               <div><dt>status</dt><dd>{project.status}</dd></div>
