@@ -4,20 +4,16 @@ const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 
 const PROJECTS = ['project 001', 'project 002', 'project 003'];
 
-function randomSeed() {
+function machineSeed() {
+  const parameter = new URLSearchParams(window.location.search).get('seed');
+  const requestedSeed = Number(parameter);
+  if (parameter !== null && Number.isInteger(requestedSeed) && requestedSeed >= 0) return requestedSeed >>> 0;
   const value = new Uint32Array(1);
-  const previousValue = window.sessionStorage.getItem('sdj-machine-family');
-  const previousFamily = previousValue === null ? -1 : Number(previousValue);
-  let family;
-  do {
-    window.crypto.getRandomValues(value);
-    family = value[0] % 6;
-  } while (family === previousFamily);
-  window.sessionStorage.setItem('sdj-machine-family', String(family));
+  window.crypto.getRandomValues(value);
   return value[0];
 }
 
-const HOME_MACHINE_SEED = randomSeed();
+const HOME_MACHINE_SEED = machineSeed();
 
 function Logo({ large = false }) {
   return (

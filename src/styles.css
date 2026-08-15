@@ -131,6 +131,7 @@ a { color: inherit; }
   outline: none;
 }
 .machine-canvas.is-dragging { cursor: grabbing; }
+.machine-canvas.is-control { cursor: pointer; }
 .machine-fallback { display: none; }
 
 .interior-page { min-height: 620px; }

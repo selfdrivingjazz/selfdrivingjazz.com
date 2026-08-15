@@ -1,194 +1,188 @@
-import { createMachineKit } from './components.js';
-import { familyForSeed } from './spec.js';
+import * as THREE from 'three';
 
-function seededRandom(seed) {
-  let value = seed >>> 0;
-  return () => {
-    value += 0x6d2b79f5;
-    let result = value;
-    result = Math.imul(result ^ (result >>> 15), result | 1);
-    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
-    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { createMachineKit } from './components.js';
+import { createSeededRandom, generateMachinePlan } from './grammar.js';
 
 function between(random, minimum, maximum) {
   return minimum + (maximum - minimum) * random();
 }
 
-function signalConsole(kit, random) {
-  const { materials } = kit;
-  kit.chassis({ width: 6.2, height: 0.34, depth: 3.8, material: materials.dark });
-  kit.keybed({ width: between(random, 2.3, 2.8), depth: 1.25, keys: 9, position: [-1.55, 0.38, 0.7] });
-  kit.padBank({ columns: 4, rows: 3, cell: 0.34, position: [1.55, 0.38, 0.78] });
-  kit.faderBank({ channels: 6, travel: 0.82, position: [0.35, 0.38, -0.18], rotation: [0, -0.05, 0] });
-  kit.patchBay({ width: 2.2, height: 1.15, columns: 6, rows: 3, position: [-0.45, 0.42, -1.48] });
-  kit.chassis({ width: 1.75, height: 1.25, depth: 1.25, position: [1.65, 0.38, -1.25], material: materials.mid });
-  kit.rotor({ radius: 0.67, position: [1.65, 1.95, -0.58], vertical: true, speed: 0.21 });
-  kit.bridge({ length: 5.75, position: [0, 1.02, 0.12], rotation: [0, -0.05, 0], nodes: 5 });
-  kit.conduit({
-    points: [[-0.9, 1.35, -1.35], [-0.3, 1.72, -0.7], [0.8, 1.5, -0.1], [1.7, 0.62, 0.65]],
-    material: materials.cyan,
+function structuralLink(kit, from, to, material) {
+  const start = new THREE.Vector3(...from);
+  const end = new THREE.Vector3(...to);
+  const direction = end.clone().sub(start);
+  const length = direction.length();
+  const beam = kit.cylinder({
+    radius: 0.026,
+    height: length,
+    position: start.clone().add(end).multiplyScalar(0.5).toArray(),
+    material,
+    edge: kit.materials.edgeSoft,
+    segments: 10,
   });
-  kit.antenna({ height: 1.25, position: [-2.65, 0.38, -1.25], material: materials.lime });
+  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
 }
 
-function relayTower(kit, random) {
-  const { materials } = kit;
-  kit.drum({ radius: 2.2, height: 0.34, material: materials.dark });
-  kit.chassis({ width: 3.2, height: 0.6, depth: 2.7, position: [0, 0.34, 0], material: materials.mid });
-  kit.chassis({ width: 2.45, height: 0.8, depth: 2.05, position: [0.15, 0.95, -0.05], material: materials.surface });
-  kit.chassis({ width: 1.65, height: 0.72, depth: 1.42, position: [-0.05, 1.76, -0.05], material: materials.dark });
-  kit.patchBay({ width: 1.45, height: 0.75, columns: 4, rows: 2, position: [0, 1.82, 0.72] });
-  kit.knobBank({ count: 5, spacing: 0.34, position: [0, 2.48, -0.2], rotation: [0, 0.12, 0] });
-  kit.speaker({ radius: between(random, 0.64, 0.82), position: [0, 2.82, 0.78] });
-  kit.speaker({ radius: 0.48, position: [-1.72, 1.48, 0.3], rotation: [0, -Math.PI / 2, 0] });
-  kit.bridge({ length: 3.8, position: [0, 1.35, 0.95], rotation: [0, 0, Math.PI / 2], nodes: 3 });
-  kit.antenna({ height: between(random, 1.4, 1.9), position: [1.48, 0.96, -0.75] });
-  kit.antenna({ height: between(random, 0.9, 1.3), position: [-1.35, 0.96, -0.8], material: materials.lime });
-  kit.conduit({
-    points: [[-1.45, 0.55, -0.5], [-2.05, 1.15, -0.3], [-1.65, 2.1, 0.25], [-0.72, 2.32, 0.55]],
-    material: materials.cyan,
-    radius: 0.07,
-  });
-}
-
-function twinDeck(kit, random) {
-  const { materials } = kit;
-  const separation = between(random, 1.75, 2.05);
-  kit.chassis({ width: 2.65, height: 0.38, depth: 3.15, position: [-separation, 0, 0], material: materials.dark });
-  kit.chassis({ width: 2.65, height: 0.38, depth: 3.15, position: [separation, 0, 0], material: materials.dark });
-  kit.chassis({ width: 1.8, height: 0.72, depth: 1.45, position: [-separation, 0.38, -0.55], material: materials.mid });
-  kit.chassis({ width: 1.8, height: 0.95, depth: 1.45, position: [separation, 0.38, -0.55], material: materials.surface });
-  kit.rotor({ radius: 0.63, position: [-separation, 1.42, -0.55], speed: 0.24 });
-  kit.rotor({ radius: 0.63, position: [separation, 1.65, -0.55], speed: -0.19 });
-  kit.keybed({ width: 2.1, depth: 1.15, keys: 7, position: [-separation, 0.44, 0.85] });
-  kit.padBank({ columns: 4, rows: 2, cell: 0.36, position: [separation, 0.44, 0.85] });
-  kit.knobBank({ count: 6, spacing: 0.36, position: [0, 0.48, -0.82] });
-  kit.bridge({ length: separation * 2.05, position: [0, 1.16, 0.12], nodes: 4 });
-  kit.conduit({
-    points: [[-separation, 0.72, -1.2], [-0.8, 1.85, -1.55], [0.8, 1.85, -1.55], [separation, 0.9, -1.2]],
-    material: materials.lime,
-  });
-  kit.antenna({ height: 1.0, position: [-separation - 0.9, 0.38, -1.15] });
-  kit.antenna({ height: 1.0, position: [separation + 0.9, 0.38, -1.15], material: materials.lime });
-}
-
-function radialEngine(kit, random) {
-  const { materials } = kit;
-  kit.drum({ radius: 2.65, height: 0.32, material: materials.dark });
-  kit.drum({ radius: 1.25, height: 1.05, position: [0, 0.32, 0], material: materials.surface });
-  kit.drum({ radius: 0.72, height: 0.62, position: [0, 1.37, 0], material: materials.dark });
-  kit.rotor({ radius: 0.68, position: [0, 2.15, 0], speed: 0.2 });
-  kit.knobBank({ count: 6, spacing: 0.34, position: [0, 1.78, 0] });
-  kit.torus({ radius: 2.12, tube: 0.045, position: [0, 0.42, 0], rotation: [Math.PI / 2, 0, 0], material: materials.cyan });
-
-  const spokeCount = random() > 0.5 ? 6 : 5;
-  for (let index = 0; index < spokeCount; index += 1) {
-    const angle = (index / spokeCount) * Math.PI * 2;
-    const x = Math.cos(angle) * 1.82;
-    const z = Math.sin(angle) * 1.82;
-    kit.box({
-      size: [1.85, 0.2, 0.42],
-      position: [x * 0.52, 0.62, z * 0.52],
-      rotation: [0, -angle, 0],
-      material: materials.black,
-    });
-    if (index % 2 === 0) {
-      kit.speaker({ radius: 0.36, position: [x, 0.92, z], rotation: [0, -angle + Math.PI / 2, 0] });
-    } else {
-      kit.chassis({ width: 0.72, height: 0.72, depth: 0.72, position: [x, 0.4, z], rotation: [0, -angle, 0], material: materials.mid });
-      kit.sphere({ radius: 0.09, position: [x, 1.2, z], material: index === 1 ? materials.lime : materials.cyan });
+function addFeet(kit, parent, module) {
+  if (!module.legs) return;
+  const [width, , depth] = module.size;
+  const height = Math.max(0.45, module.position[1]);
+  for (const x of [-width * 0.34, width * 0.34]) {
+    for (const z of [-depth * 0.32, depth * 0.32]) {
+      kit.box({
+        parent,
+        size: [0.12, height, 0.12],
+        position: [x, -height / 2, z],
+        rotation: [0, 0, x * 0.08],
+        material: kit.materials.hardware,
+        edge: kit.materials.edgeSoft,
+      });
     }
   }
-  kit.antenna({ height: 1.5, position: [2.1, 0.34, -1.2], material: materials.lime });
 }
 
-function tapeShrine(kit, random) {
-  const { materials } = kit;
-  kit.chassis({ width: 5.3, height: 0.34, depth: 3.4, material: materials.dark });
-  kit.chassis({ width: 3.2, height: 0.65, depth: 1.1, position: [0, 0.34, -1.15], material: materials.mid });
-  kit.reelDeck({ width: 3.05, height: 2.05, position: [0, 1.0, -1.05] });
-  kit.keybed({ width: 3.3, depth: 1.12, keys: 11, position: [0, 0.42, 0.82] });
-  kit.faderBank({ channels: 5, travel: 0.68, position: [1.48, 0.44, 0.68] });
-  kit.patchBay({ width: 1.1, height: 1.45, columns: 3, rows: 4, position: [-2.08, 0.44, -0.95] });
-  kit.patchBay({ width: 1.1, height: 1.45, columns: 3, rows: 4, position: [2.08, 0.44, -0.95] });
-  kit.bridge({ length: 5.0, position: [0, 2.98, -1.0], nodes: 5 });
-  kit.conduit({
-    points: [[-1.95, 1.5, -0.75], [-1.72, 2.45, -0.45], [-0.9, 2.72, 0.1], [-0.8, 0.72, 0.65]],
-    material: materials.cyan,
-  });
-  kit.conduit({
-    points: [[1.95, 1.25, -0.8], [2.35, 2.1, -0.25], [1.5, 2.55, 0.2], [1.1, 0.72, 0.7]],
-    material: materials.lime,
-    radius: between(random, 0.045, 0.07),
-  });
+function addRoleControls(kit, parent, module, random) {
+  const [width, height, depth] = module.size;
+  const top = [0, height + 0.06, 0];
+  const compactWidth = Math.max(0.72, width * 0.78);
+
+  if (module.role === 'sequencer') {
+    const columns = Math.max(3, Math.min(7, Math.floor(width / 0.27)));
+    kit.padBank({ parent, columns, rows: depth > 1.1 ? 2 : 1, cell: Math.min(0.31, compactWidth / columns), position: top });
+    return;
+  }
+  if (module.role === 'mixer') {
+    const channels = Math.max(2, Math.min(5, Math.floor(width / 0.34)));
+    kit.faderBank({ parent, channels, spacing: Math.min(0.3, compactWidth / channels), travel: Math.min(0.68, depth * 0.56), position: top });
+    if (width > 1.35) kit.knobBank({ parent, count: channels, spacing: Math.min(0.3, compactWidth / channels), position: [0, height + 0.08, -depth * 0.34] });
+    return;
+  }
+  if (module.role === 'patch') {
+    kit.patchBay({
+      parent,
+      width: width * 0.76,
+      height: height * 0.74,
+      columns: Math.max(3, Math.floor(width / 0.3)),
+      rows: 2,
+      position: [0, height * 0.12, depth / 2 + 0.1],
+    });
+    return;
+  }
+  if (module.role === 'reel' && width > 1.25) {
+    kit.reelDeck({ parent, width: width * 0.82, height: Math.max(0.62, height * 0.9), position: [0, height * 0.12, depth / 2 + 0.08] });
+    return;
+  }
+  if (module.role === 'speaker') {
+    const radius = Math.min(width, height + 0.35) * 0.3;
+    kit.speaker({ parent, radius, position: [0, height * 0.52, depth / 2 + radius * 0.15] });
+    return;
+  }
+  if (module.role === 'scanner') {
+    kit.screen({ parent, width: compactWidth, depth: Math.min(0.68, depth * 0.65), position: top });
+    if (random() > 0.45) kit.antenna({ parent, height: between(random, 0.48, 0.95), position: [width * 0.34, height, -depth * 0.25], material: module.accent === 'secondary' ? kit.materials.secondary : kit.materials.primary });
+    return;
+  }
+  if (module.role === 'keys') {
+    kit.keybed({ parent, width: compactWidth, depth: Math.min(0.82, depth * 0.72), keys: Math.max(4, Math.floor(width / 0.2)), position: top });
+    return;
+  }
+  const toggles = Math.max(2, Math.min(5, Math.floor(width / 0.28)));
+  kit.toggleBank({ parent, count: toggles, spacing: Math.min(0.28, compactWidth / toggles), position: [0, height + 0.06, -depth * 0.14] });
+  if (depth > 1.05) kit.joystick({ parent, position: [0, height + 0.06, depth * 0.3] });
 }
 
-function walkingSequencer(kit, random) {
-  const { materials } = kit;
-  const bodyLength = 5.8;
-  kit.chassis({ width: bodyLength, height: 0.72, depth: 1.75, position: [0, 0.82, 0], material: materials.mid });
-  for (const [index, x] of [-2.25, -0.8, 0.8, 2.25].entries()) {
-    const height = between(random, 0.72, 1.0);
-    kit.box({
-      size: [0.28, height, 0.32],
-      position: [x, height / 2, index % 2 === 0 ? -0.62 : 0.62],
-      rotation: [0, 0, x * 0.035],
-      material: materials.dark,
+function buildModule(kit, module, random, index) {
+  const parent = new THREE.Group();
+  parent.position.set(...module.position);
+  parent.rotation.y = module.rotation;
+  kit.root.add(parent);
+  const [width, height, depth] = module.size;
+  const bodyMaterial = index % 3 === 0 ? kit.materials.surface : index % 2 === 0 ? kit.materials.mid : kit.materials.dark;
+
+  addFeet(kit, parent, module);
+  if (module.plinth) {
+    if (module.form === 'drum') {
+      kit.cylinder({ parent, radius: Math.min(width, depth) * 0.58, height: 0.12, position: [0, -0.06, 0], material: kit.materials.black, segments: 40 });
+    } else {
+      kit.box({ parent, size: [width + 0.18, 0.12, depth + 0.18], position: [0, -0.06, 0], material: kit.materials.black });
+    }
+  }
+
+  if (module.form === 'drum') {
+    kit.drum({ parent, radius: Math.min(width, depth) * 0.5, height, material: bodyMaterial });
+  } else {
+    kit.chassis({ parent, width, height, depth, material: bodyMaterial });
+    if (random() > 0.38) {
+      kit.box({
+        parent,
+        size: [width * between(random, 0.35, 0.72), 0.025, 0.04],
+        position: [between(random, -width * 0.08, width * 0.08), height + 0.055, -depth * 0.42],
+        material: module.accent === 'secondary' ? kit.materials.secondary : kit.materials.primary,
+        edge: kit.materials.edgeSoft,
+      });
+    }
+  }
+  addRoleControls(kit, parent, module, random);
+  kit.evolvable.push(parent);
+  return parent;
+}
+
+function addTopologyStructure(kit, plan) {
+  for (const [index, [fromIndex, toIndex]] of plan.edges.entries()) {
+    if (index % 2 !== 0 && plan.topology.id !== 'bridge') continue;
+    const fromModule = plan.modules[fromIndex];
+    const toModule = plan.modules[toIndex];
+    const from = [fromModule.position[0], fromModule.position[1] + fromModule.size[1] * 0.45, fromModule.position[2]];
+    const to = [toModule.position[0], toModule.position[1] + toModule.size[1] * 0.45, toModule.position[2]];
+    structuralLink(kit, from, to, index % 3 === 0 ? kit.materials.primary : kit.materials.hardware);
+  }
+
+  for (const cable of plan.cables) {
+    kit.cable({
+      start: cable.from,
+      end: cable.to,
+      lift: cable.lift,
+      radius: cable.radius,
+      material: cable.material === 'secondary' ? kit.materials.secondary : kit.materials.primary,
     });
   }
-  kit.padBank({ columns: 10, rows: 1, cell: 0.42, position: [-0.25, 1.62, 0] });
-  kit.faderBank({ channels: 7, travel: 0.58, spacing: 0.32, position: [-1.2, 1.22, 0.36], rotation: [0, 0.04, 0] });
-  kit.bridge({ length: 5.45, position: [0, 2.02, -0.42], rotation: [0, 0.035, 0], nodes: 6 });
-  kit.chassis({ width: 1.3, height: 1.05, depth: 1.2, position: [1.85, 1.56, 0.1], material: materials.dark });
-  kit.speaker({ radius: 0.56, position: [1.85, 2.62, 0.72] });
-  kit.speaker({ radius: 0.52, position: [-3.05, 1.6, 0], rotation: [0, -Math.PI / 2, 0] });
-  kit.antenna({ height: 1.45, position: [2.5, 1.55, -0.42], material: materials.lime });
-  kit.conduit({
-    points: [[-2.7, 1.55, 0.52], [-1.45, 2.55, 0.75], [0.65, 2.62, 0.55], [2.35, 2.15, 0.32]],
-    material: materials.cyan,
-  });
 }
-
-const BUILDERS = {
-  'signal-console': signalConsole,
-  'relay-tower': relayTower,
-  'twin-deck': twinDeck,
-  'radial-engine': radialEngine,
-  'tape-shrine': tapeShrine,
-  'walking-sequencer': walkingSequencer,
-};
 
 function withEvolution(machine, random) {
   const parts = machine.evolvable.map((object, index) => ({
     object,
     basePosition: object.position.clone(),
-    baseScale: object.scale.clone(),
     baseRotationY: object.rotation.y,
     baseRotationZ: object.rotation.z,
-    direction: index % 2 === 0 ? 1 : -1,
+    lift: 0,
+    targetLift: 0,
+    turn: 0,
+    targetTurn: 0,
+    tilt: 0,
+    targetTilt: 0,
     phase: random() * Math.PI * 2,
-    value: 1,
-    target: 1,
+    index,
   }));
   const baseUpdate = machine.update;
   let previousTime = 0;
-  let nextMutation = between(random, 2.4, 3.8);
+  let nextMutation = between(random, 3.4, 5.2);
 
-  function mutate(time) {
-    const hidden = parts.filter((part) => part.target === 0);
-    const maximumHidden = Math.max(2, Math.min(5, Math.floor(parts.length * 0.36)));
-    const shouldHide = hidden.length < maximumHidden;
-    const candidates = parts.filter((part) => part.target === (shouldHide ? 1 : 0));
-    const capacity = shouldHide ? maximumHidden - hidden.length : hidden.length;
-    const count = Math.min(candidates.length, capacity, 1 + Math.floor(random() * 3));
+  function reconfigure(time) {
+    for (const part of parts) {
+      part.targetLift = 0;
+      part.targetTurn = 0;
+      part.targetTilt = 0;
+    }
+    const candidates = [...parts];
+    const count = Math.min(candidates.length, 1 + Math.floor(random() * 3));
     for (let index = 0; index < count; index += 1) {
       const candidateIndex = Math.floor(random() * candidates.length);
       const [part] = candidates.splice(candidateIndex, 1);
-      part.target = shouldHide ? 0 : 1;
+      part.targetLift = between(random, 0.08, 0.42);
+      part.targetTurn = between(random, -0.22, 0.22);
+      part.targetTilt = between(random, -0.08, 0.08);
     }
-    nextMutation = time + between(random, 3.1, 4.8);
+    nextMutation = time + between(random, 4.2, 7.0);
   }
 
   return {
@@ -197,47 +191,35 @@ function withEvolution(machine, random) {
       baseUpdate(time, reducedMotion);
       const delta = previousTime === 0 ? 0 : Math.min(0.1, time - previousTime);
       previousTime = time;
-
-      if (!evolution || reducedMotion) {
-        for (const part of parts) {
-          part.value = 1;
-          part.target = 1;
-          part.object.visible = true;
-          part.object.scale.copy(part.baseScale);
-          part.object.position.copy(part.basePosition);
-          part.object.rotation.y = part.baseRotationY;
-          part.object.rotation.z = part.baseRotationZ;
-        }
-        if (nextMutation <= time) nextMutation = time + between(random, 2.4, 3.8);
-        return;
-      }
-
-      if (time >= nextMutation && parts.length > 0) mutate(time);
+      if (evolution && !reducedMotion && time >= nextMutation && parts.length > 0) reconfigure(time);
       for (const part of parts) {
-        part.value += (part.target - part.value) * (1 - Math.exp(-delta * 1.1));
-        const eased = part.value * part.value * (3 - 2 * part.value);
-        const retracted = 1 - eased;
-        part.object.visible = eased > 0.004;
-        part.object.scale.set(
-          part.baseScale.x * Math.max(0.001, eased),
-          part.baseScale.y * Math.max(0.001, 0.18 + eased * 0.82),
-          part.baseScale.z * Math.max(0.001, eased),
-        );
+        const targetLift = evolution && !reducedMotion ? part.targetLift : 0;
+        const targetTurn = evolution && !reducedMotion ? part.targetTurn : 0;
+        const targetTilt = evolution && !reducedMotion ? part.targetTilt : 0;
+        const damping = 1 - Math.exp(-delta * 1.8);
+        part.lift += (targetLift - part.lift) * damping;
+        part.turn += (targetTurn - part.turn) * damping;
+        part.tilt += (targetTilt - part.tilt) * damping;
         part.object.position.copy(part.basePosition);
-        part.object.position.y -= retracted * (0.22 + (part.phase / (Math.PI * 2)) * 0.38);
-        part.object.position.x += Math.sin(part.phase) * retracted * 0.16;
-        part.object.rotation.y = part.baseRotationY + retracted * 0.42 * part.direction;
-        part.object.rotation.z = part.baseRotationZ + retracted * 0.12 * Math.sin(part.phase);
+        part.object.position.y += part.lift + Math.sin(time * 0.55 + part.phase) * part.lift * 0.08;
+        part.object.rotation.y = part.baseRotationY + part.turn;
+        part.object.rotation.z = part.baseRotationZ + part.tilt;
       }
+      if ((!evolution || reducedMotion) && nextMutation <= time) nextMutation = time + between(random, 3.4, 5.2);
     },
   };
 }
 
 export function buildMachine(seed) {
-  const random = seededRandom(seed);
-  const family = familyForSeed(seed);
-  const kit = createMachineKit(random);
-  BUILDERS[family.id](kit, random);
-  const machine = kit.finish(between(random, 0, Math.PI * 2));
-  return { ...withEvolution(machine, random), family };
+  const plan = generateMachinePlan(seed);
+  const random = createSeededRandom(seed);
+  const kit = createMachineKit(random, plan.palette);
+  for (const [index, module] of plan.modules.entries()) buildModule(kit, module, random, index);
+  addTopologyStructure(kit, plan);
+  const machine = kit.finish(plan.phase);
+  return {
+    ...withEvolution(machine, random),
+    family: { id: plan.topology.id, name: plan.specimen },
+    plan,
+  };
 }

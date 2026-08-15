@@ -1,41 +1,42 @@
 import * as THREE from 'three';
 
-const COLORS = {
-  edge: 0x8e9a96,
-  edgeSoft: 0x46514d,
+const DEFAULT_PALETTE = {
   black: 0x070a09,
   dark: 0x0f1513,
   mid: 0x1c2723,
   surface: 0x2b3833,
-  cyan: 0x73ddd0,
-  lime: 0xb9dc63,
+  hardware: 0x8e9a96,
+  primary: 0x73ddd0,
+  secondary: 0xb9dc63,
   white: 0xe8ece5,
 };
 
-function createMaterials() {
+function createMaterials(palette = DEFAULT_PALETTE) {
+  const primary = new THREE.MeshStandardMaterial({
+    color: palette.primary,
+    emissive: palette.primary,
+    emissiveIntensity: 0.2,
+    roughness: 0.38,
+    metalness: 0.35,
+  });
+  const secondary = new THREE.MeshStandardMaterial({
+    color: palette.secondary,
+    emissive: palette.secondary,
+    emissiveIntensity: 0.14,
+    roughness: 0.4,
+    metalness: 0.3,
+  });
   return {
-    black: new THREE.MeshStandardMaterial({ color: COLORS.black, roughness: 0.72, metalness: 0.35 }),
-    dark: new THREE.MeshStandardMaterial({ color: COLORS.dark, roughness: 0.66, metalness: 0.42 }),
-    mid: new THREE.MeshStandardMaterial({ color: COLORS.mid, roughness: 0.58, metalness: 0.5 }),
-    surface: new THREE.MeshStandardMaterial({ color: COLORS.surface, roughness: 0.52, metalness: 0.5 }),
-    hardware: new THREE.MeshStandardMaterial({ color: COLORS.edge, roughness: 0.46, metalness: 0.62 }),
-    cyan: new THREE.MeshStandardMaterial({
-      color: COLORS.cyan,
-      emissive: COLORS.cyan,
-      emissiveIntensity: 0.2,
-      roughness: 0.38,
-      metalness: 0.35,
-    }),
-    lime: new THREE.MeshStandardMaterial({
-      color: COLORS.lime,
-      emissive: COLORS.lime,
-      emissiveIntensity: 0.14,
-      roughness: 0.4,
-      metalness: 0.3,
-    }),
-    white: new THREE.MeshStandardMaterial({ color: COLORS.white, roughness: 0.52, metalness: 0.25 }),
-    edge: new THREE.LineBasicMaterial({ color: COLORS.edge, transparent: true, opacity: 0.7 }),
-    edgeSoft: new THREE.LineBasicMaterial({ color: COLORS.edgeSoft, transparent: true, opacity: 0.42 }),
+    black: new THREE.MeshStandardMaterial({ color: palette.black, roughness: 0.72, metalness: 0.35 }),
+    dark: new THREE.MeshStandardMaterial({ color: palette.dark, roughness: 0.66, metalness: 0.42 }),
+    mid: new THREE.MeshStandardMaterial({ color: palette.mid, roughness: 0.58, metalness: 0.5 }),
+    surface: new THREE.MeshStandardMaterial({ color: palette.surface, roughness: 0.52, metalness: 0.5 }),
+    hardware: new THREE.MeshStandardMaterial({ color: palette.hardware, roughness: 0.46, metalness: 0.62 }),
+    primary,
+    secondary,
+    white: new THREE.MeshStandardMaterial({ color: palette.white, roughness: 0.52, metalness: 0.25 }),
+    edge: new THREE.LineBasicMaterial({ color: palette.hardware, transparent: true, opacity: 0.7 }),
+    edgeSoft: new THREE.LineBasicMaterial({ color: palette.hardware, transparent: true, opacity: 0.32 }),
   };
 }
 
@@ -45,12 +46,18 @@ function applyTransform(object, position = [0, 0, 0], rotation = [0, 0, 0]) {
   return object;
 }
 
-export function createMachineKit(random) {
+export function createMachineKit(random, palette) {
   const root = new THREE.Group();
-  const materials = createMaterials();
+  const materials = createMaterials(palette);
   const disposables = [];
   const animations = [];
   const evolvable = [];
+  const interactions = [];
+
+  function registerInteraction(target, activate) {
+    interactions.push({ target, activate });
+    return target;
+  }
 
   function outlined(parent, geometry, material = materials.dark, edgeMaterial = materials.edge) {
     const mesh = new THREE.Mesh(geometry, material);
@@ -98,7 +105,7 @@ export function createMachineKit(random) {
     );
   }
 
-  function sphere({ parent = root, radius, position = [0, 0, 0], material = materials.cyan }) {
+  function sphere({ parent = root, radius, position = [0, 0, 0], material = materials.primary }) {
     const geometry = new THREE.SphereGeometry(radius, 24, 16);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
@@ -114,7 +121,7 @@ export function createMachineKit(random) {
     tube = 0.05,
     position = [0, 0, 0],
     rotation = [0, 0, 0],
-    material = materials.cyan,
+    material = materials.primary,
   }) {
     const geometry = new THREE.TorusGeometry(radius, tube, 12, 64);
     const mesh = new THREE.Mesh(geometry, material);
@@ -125,12 +132,26 @@ export function createMachineKit(random) {
     return mesh;
   }
 
-  function conduit({ parent = root, points, material = materials.cyan, radius = 0.055 }) {
-    const curve = new THREE.CatmullRomCurve3(points.map((point) => new THREE.Vector3(...point)));
-    const geometry = new THREE.TubeGeometry(curve, 48, radius, 10, false);
+  function cable({
+    parent = root,
+    start,
+    end,
+    material = materials.primary,
+    radius = 0.035,
+    lift = 0.45,
+  }) {
+    const startPoint = new THREE.Vector3(...start);
+    const endPoint = new THREE.Vector3(...end);
+    const firstControl = startPoint.clone().add(new THREE.Vector3(0, lift, 0));
+    const secondControl = endPoint.clone().add(new THREE.Vector3(0, lift, 0));
+    const curve = new THREE.CubicBezierCurve3(startPoint, firstControl, secondControl, endPoint);
+    const distance = startPoint.distanceTo(endPoint);
+    const geometry = new THREE.TubeGeometry(curve, Math.max(20, Math.ceil(distance * 12)), radius, 8, false);
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
     parent.add(mesh);
+    sphere({ parent, radius: radius * 1.7, position: start, material: materials.hardware });
+    sphere({ parent, radius: radius * 1.7, position: end, material: materials.hardware });
     disposables.push(geometry);
     return mesh;
   }
@@ -179,13 +200,14 @@ export function createMachineKit(random) {
         parent: group,
         size: [keyWidth - 0.035, 0.055, depth - 0.18],
         position: [-width / 2 + 0.09 + keyWidth * (index + 0.5), restingY, 0],
-        material: accented ? materials.lime : index % 3 === 1 ? materials.mid : materials.surface,
+        material: accented ? materials.secondary : index % 3 === 1 ? materials.mid : materials.surface,
         edge: materials.edgeSoft,
       });
-      const phase = random() * Math.PI * 2;
-      const speed = 0.7 + random() * 1.7;
-      animations.push((time) => {
-        key.position.y = restingY - Math.max(0, Math.sin(time * speed + phase)) * 0.05;
+      let depressed = false;
+      registerInteraction(key, () => {
+        depressed = !depressed;
+        key.position.y = restingY - (depressed ? 0.055 : 0);
+        key.material = depressed ? materials.primary : accented ? materials.secondary : index % 3 === 1 ? materials.mid : materials.surface;
       });
     }
     evolvable.push(group);
@@ -207,7 +229,7 @@ export function createMachineKit(random) {
     box({ parent: group, size: [width, 0.15, depth], position: [0, 0.075, 0], material: materials.black });
     for (let row = 0; row < rows; row += 1) {
       for (let column = 0; column < columns; column += 1) {
-        const active = (row * columns + column) % (columns + 1) === Math.floor(random() * 2);
+        let active = (row * columns + column) % (columns + 1) === Math.floor(random() * 2);
         const restingY = 0.18;
         const pad = box({
           parent: group,
@@ -217,13 +239,13 @@ export function createMachineKit(random) {
             restingY,
             (row - (rows - 1) / 2) * cell,
           ],
-          material: active ? materials.cyan : materials.mid,
+          material: active ? materials.primary : materials.mid,
           edge: materials.edgeSoft,
         });
-        const phase = random() * Math.PI * 2;
-        const speed = 0.5 + random() * 1.4;
-        animations.push((time) => {
-          pad.position.y = restingY + Math.max(0, Math.sin(time * speed + phase)) * (active ? 0.055 : 0.022);
+        registerInteraction(pad, () => {
+          active = !active;
+          pad.material = active ? materials.primary : materials.mid;
+          pad.position.y = restingY + (active ? 0.045 : 0);
         });
       }
     }
@@ -246,17 +268,18 @@ export function createMachineKit(random) {
     for (let index = 0; index < channels; index += 1) {
       const x = (index - (channels - 1) / 2) * spacing;
       box({ parent: group, size: [0.035, 0.022, travel], position: [x, 0.17, 0], material: materials.hardware, edge: materials.edgeSoft });
-      const phase = random() * Math.PI * 2;
-      const speed = 0.25 + random() * 0.55;
+      let value = random();
       const handle = box({
         parent: group,
         size: [0.18, 0.12, 0.24],
-        position: [x, 0.24, Math.sin(phase) * travel * 0.3],
-        material: index % 3 === 0 ? materials.lime : materials.surface,
+        position: [x, 0.24, (value - 0.5) * travel * 0.74],
+        material: index % 3 === 0 ? materials.secondary : materials.surface,
         edge: materials.edgeSoft,
       });
-      animations.push((time) => {
-        handle.position.z = Math.sin(time * speed + phase) * travel * 0.37;
+      registerInteraction(handle, () => {
+        value = (value + 0.25) % 1.25;
+        if (value > 1) value = 0;
+        handle.position.z = (value - 0.5) * travel * 0.74;
       });
     }
     evolvable.push(group);
@@ -283,13 +306,17 @@ export function createMachineKit(random) {
         parent: control,
         size: [0.025, 0.035, 0.1],
         position: [0, 0.27, -0.045],
-        material: index % 2 === 0 ? materials.cyan : materials.lime,
+        material: index % 2 === 0 ? materials.primary : materials.secondary,
         edge: materials.edgeSoft,
       });
-      const phase = random() * Math.PI * 2;
-      const speed = 0.16 + random() * 0.34;
-      animations.push((time) => {
-        control.rotation.y = Math.sin(time * speed + phase) * 1.2;
+      control.rotation.y = random() * Math.PI * 1.5 - Math.PI * 0.75;
+      registerInteraction(control, () => {
+        control.rotation.y = THREE.MathUtils.clamp(
+          control.rotation.y + Math.PI * 0.28,
+          -Math.PI * 0.75,
+          Math.PI * 0.75,
+        );
+        if (control.rotation.y >= Math.PI * 0.74) control.rotation.y = -Math.PI * 0.75;
       });
     }
     evolvable.push(group);
@@ -318,7 +345,7 @@ export function createMachineKit(random) {
             height * 0.24 + row * (height * 0.24),
             0.115,
           ],
-          material: (row + column) % 7 === 0 ? materials.lime : materials.hardware,
+          material: (row + column) % 7 === 0 ? materials.secondary : materials.hardware,
         });
       }
     }
@@ -347,7 +374,7 @@ export function createMachineKit(random) {
       tube: 0.045,
       position: [0, 0.1, 0],
       rotation: [Math.PI / 2, 0, 0],
-      material: materials.lime,
+      material: materials.secondary,
     });
     sphere({ parent: spinner, radius: 0.07, position: [0, 0.145, 0], material: materials.white });
     animations.push((time) => { spinner.rotation.y = time * speed; });
@@ -371,7 +398,7 @@ export function createMachineKit(random) {
       spinner.rotation.x = Math.PI / 2;
       group.add(spinner);
       cylinder({ parent: spinner, radius: height * 0.27, height: 0.12, material: materials.black, segments: 48 });
-      torus({ parent: spinner, radius: height * 0.22, tube: 0.045, position: [0, 0.075, 0], rotation: [Math.PI / 2, 0, 0], material: index ? materials.lime : materials.cyan });
+      torus({ parent: spinner, radius: height * 0.22, tube: 0.045, position: [0, 0.075, 0], rotation: [Math.PI / 2, 0, 0], material: index ? materials.secondary : materials.primary });
       sphere({ parent: spinner, radius: 0.06, position: [0, 0.14, 0], material: materials.white });
       animations.push((time) => { spinner.rotation.y = time * (index ? -0.19 : 0.23); });
     }
@@ -392,8 +419,8 @@ export function createMachineKit(random) {
     cone.rotation.x = Math.PI / 2;
     cone.position.z = radius * 0.22;
     group.add(cone);
-    torus({ parent: group, radius, tube: 0.05, position: [0, 0, radius * 0.63], material: materials.cyan });
-    const driver = sphere({ parent: group, radius: radius * 0.12, position: [0, 0, radius * 0.66], material: materials.lime });
+    torus({ parent: group, radius, tube: 0.05, position: [0, 0, radius * 0.63], material: materials.primary });
+    const driver = sphere({ parent: group, radius: radius * 0.12, position: [0, 0, radius * 0.66], material: materials.secondary });
     const phase = random() * Math.PI * 2;
     animations.push((time) => {
       const pulse = 1 + Math.sin(time * 2.4 + phase) * 0.09;
@@ -415,14 +442,14 @@ export function createMachineKit(random) {
     const group = applyTransform(new THREE.Group(), position, rotation);
     parent.add(group);
     box({ parent: group, size: [length, 0.28, 0.5], position: [0, 0.14, 0], material: materials.black });
-    box({ parent: group, size: [length - 0.28, 0.025, 0.045], position: [0, 0.3, 0], material: materials.cyan, edge: materials.edgeSoft });
+    box({ parent: group, size: [length - 0.28, 0.025, 0.045], position: [0, 0.3, 0], material: materials.primary, edge: materials.edgeSoft });
     for (let index = 0; index < nodes; index += 1) {
       const restingY = 0.34;
       const node = sphere({
         parent: group,
         radius: 0.075,
         position: [-length * 0.38 + (length * 0.76 * index) / Math.max(1, nodes - 1), restingY, 0],
-        material: index === nodes - 1 ? materials.lime : materials.hardware,
+        material: index === nodes - 1 ? materials.secondary : materials.hardware,
       });
       const phase = (index / Math.max(1, nodes)) * Math.PI * 2;
       animations.push((time) => {
@@ -438,7 +465,7 @@ export function createMachineKit(random) {
     parent = root,
     height = 1.4,
     position = [0, 0, 0],
-    material = materials.cyan,
+    material = materials.primary,
   }) {
     const group = applyTransform(new THREE.Group(), position);
     parent.add(group);
@@ -447,6 +474,91 @@ export function createMachineKit(random) {
     const phase = random() * Math.PI * 2;
     animations.push((time) => {
       receiver.scale.setScalar(1 + Math.sin(time * 1.6 + phase) * 0.16);
+    });
+    evolvable.push(group);
+    return group;
+  }
+
+  function screen({
+    parent = root,
+    width = 1.1,
+    depth = 0.72,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+  }) {
+    const group = applyTransform(new THREE.Group(), position, rotation);
+    parent.add(group);
+    box({ parent: group, size: [width, 0.14, depth], position: [0, 0.07, 0], material: materials.black });
+    const glass = box({
+      parent: group,
+      size: [width - 0.16, 0.035, depth - 0.16],
+      position: [0, 0.16, 0],
+      material: materials.primary,
+      edge: materials.edgeSoft,
+    });
+    const bars = Array.from({ length: 5 }, (_, index) => box({
+      parent: group,
+      size: [width * random.between(0.2, 0.68), 0.018, 0.025],
+      position: [random.between(-0.12, 0.12), 0.185, -depth * 0.28 + index * depth * 0.13],
+      material: index === 4 ? materials.secondary : materials.white,
+      edge: materials.edgeSoft,
+    }));
+    let mode = 0;
+    registerInteraction(glass, () => {
+      mode = (mode + 1) % 3;
+      glass.material = mode === 1 ? materials.secondary : mode === 2 ? materials.dark : materials.primary;
+      for (const [index, bar] of bars.entries()) bar.scale.x = 0.35 + ((index + mode) % 4) * 0.22;
+    });
+    evolvable.push(group);
+    return group;
+  }
+
+  function toggleBank({
+    parent = root,
+    count = 4,
+    spacing = 0.3,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+  }) {
+    const group = applyTransform(new THREE.Group(), position, rotation);
+    parent.add(group);
+    box({ parent: group, size: [count * spacing + 0.18, 0.13, 0.5], position: [0, 0.065, 0], material: materials.black });
+    for (let index = 0; index < count; index += 1) {
+      const lever = new THREE.Group();
+      lever.position.set((index - (count - 1) / 2) * spacing, 0.13, 0);
+      group.add(lever);
+      const hit = cylinder({ parent: lever, radius: 0.075, height: 0.12, position: [0, 0.06, 0], material: materials.hardware, segments: 16 });
+      let on = index % 3 === 0;
+      lever.rotation.z = on ? -0.34 : 0.34;
+      registerInteraction(hit, () => {
+        on = !on;
+        lever.rotation.z = on ? -0.34 : 0.34;
+        hit.material = on ? materials.secondary : materials.hardware;
+      });
+    }
+    evolvable.push(group);
+    return group;
+  }
+
+  function joystick({
+    parent = root,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+  }) {
+    const group = applyTransform(new THREE.Group(), position, rotation);
+    parent.add(group);
+    cylinder({ parent: group, radius: 0.28, height: 0.12, position: [0, 0.06, 0], material: materials.black, segments: 32 });
+    const stick = new THREE.Group();
+    stick.position.y = 0.12;
+    group.add(stick);
+    cylinder({ parent: stick, radius: 0.035, height: 0.42, position: [0, 0.21, 0], material: materials.hardware, segments: 12 });
+    const handle = sphere({ parent: stick, radius: 0.12, position: [0, 0.46, 0], material: materials.secondary });
+    let direction = 0;
+    registerInteraction(handle, () => {
+      direction = (direction + 1) % 5;
+      const angle = direction === 4 ? 0 : (direction / 4) * Math.PI * 2;
+      stick.rotation.x = direction === 4 ? 0 : Math.cos(angle) * 0.32;
+      stick.rotation.z = direction === 4 ? 0 : Math.sin(angle) * 0.32;
     });
     evolvable.push(group);
     return group;
@@ -462,7 +574,7 @@ export function createMachineKit(random) {
     const group = applyTransform(new THREE.Group(), position);
     parent.add(group);
     cylinder({ parent: group, radius, height, position: [0, height / 2, 0], material, segments: 64 });
-    torus({ parent: group, radius: radius * 0.86, tube: 0.04, position: [0, height + 0.04, 0], rotation: [Math.PI / 2, 0, 0], material: materials.cyan });
+    torus({ parent: group, radius: radius * 0.86, tube: 0.04, position: [0, height + 0.04, 0], rotation: [Math.PI / 2, 0, 0], material: materials.primary });
     return group;
   }
 
@@ -480,12 +592,13 @@ export function createMachineKit(random) {
 
     return {
       group: root,
+      interactions,
       evolvable,
       update(time, reducedMotion) {
         if (!reducedMotion) {
           for (const animate of animations) animate(time);
-          materials.cyan.emissiveIntensity = 0.19 + Math.sin(time * 0.72 + phase) * 0.045;
-          materials.lime.emissiveIntensity = 0.13 + Math.sin(time * 0.57 + phase + 1.2) * 0.03;
+          materials.primary.emissiveIntensity = 0.19 + Math.sin(time * 0.72 + phase) * 0.045;
+          materials.secondary.emissiveIntensity = 0.13 + Math.sin(time * 0.57 + phase + 1.2) * 0.03;
         }
       },
       dispose() {
@@ -499,10 +612,11 @@ export function createMachineKit(random) {
   return {
     root,
     materials,
+    evolvable,
     box,
     cylinder,
     sphere,
-    conduit,
+    cable,
     chassis,
     keybed,
     padBank,
@@ -515,6 +629,9 @@ export function createMachineKit(random) {
     speaker,
     bridge,
     antenna,
+    screen,
+    toggleBank,
+    joystick,
     drum,
     finish,
   };

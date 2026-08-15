@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';
 
-const CAMERA_VIEW_HEIGHT = 8.4;
+const CAMERA_VIEW_HEIGHT = 6.5;
 
 function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
@@ -31,10 +31,11 @@ function MachineCanvas({ seed, evolution = false }) {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.className = 'machine-canvas';
-    renderer.domElement.setAttribute('role', 'img');
+    renderer.domElement.setAttribute('role', 'application');
+    renderer.domElement.tabIndex = 0;
     renderer.domElement.setAttribute(
       'aria-label',
-      'A procedurally generated three-dimensional machine. Drag to inspect it.',
+      'A procedurally generated three-dimensional instrument. Drag to inspect it; click its controls to operate them.',
     );
     mount.append(renderer.domElement);
 
@@ -79,8 +80,13 @@ function MachineCanvas({ seed, evolution = false }) {
     scene.add(grid);
 
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const raycaster = new THREE.Raycaster();
+    const pointerVector = new THREE.Vector2();
     const interaction = {
+      pressed: false,
       dragging: false,
+      downX: 0,
+      downY: 0,
       lastX: 0,
       lastY: 0,
       targetX: 0.02,
@@ -89,6 +95,7 @@ function MachineCanvas({ seed, evolution = false }) {
       currentY: -0.48,
       hoverX: 0,
       hoverY: 0,
+      keyboardIndex: 0,
     };
 
     function resize() {
@@ -111,32 +118,70 @@ function MachineCanvas({ seed, evolution = false }) {
       };
     }
 
+    function controlAt(event) {
+      if (!engine.machine?.interactions.length) return null;
+      const pointer = normalizedPointer(event);
+      pointerVector.set(pointer.x, pointer.y);
+      raycaster.setFromCamera(pointerVector, camera);
+      const controls = engine.machine.interactions;
+      const hits = raycaster.intersectObjects(controls.map(({ target }) => target), true);
+      for (const hit of hits) {
+        let object = hit.object;
+        while (object) {
+          const control = controls.find(({ target }) => target === object);
+          if (control) return control;
+          object = object.parent;
+        }
+      }
+      return null;
+    }
+    function activateControl(control) {
+      if (!control) return;
+      control.activate();
+      const operationCount = Number(renderer.domElement.dataset.operations ?? 0) + 1;
+      renderer.domElement.dataset.operations = String(operationCount);
+    }
+
+
     function handlePointerDown(event) {
-      interaction.dragging = true;
+      interaction.pressed = true;
+      interaction.dragging = false;
+      interaction.downX = event.clientX;
+      interaction.downY = event.clientY;
       interaction.lastX = event.clientX;
       interaction.lastY = event.clientY;
-      renderer.domElement.classList.add('is-dragging');
       renderer.domElement.setPointerCapture(event.pointerId);
     }
 
     function handlePointerMove(event) {
-      if (interaction.dragging) {
-        const deltaX = event.clientX - interaction.lastX;
-        const deltaY = event.clientY - interaction.lastY;
+      if (interaction.pressed) {
+        if (!interaction.dragging && Math.hypot(event.clientX - interaction.downX, event.clientY - interaction.downY) > 5) {
+          interaction.dragging = true;
+          renderer.domElement.classList.add('is-dragging');
+        }
+        if (interaction.dragging) {
+          const deltaX = event.clientX - interaction.lastX;
+          const deltaY = event.clientY - interaction.lastY;
+          interaction.targetY += deltaX * 0.008;
+          interaction.targetX = THREE.MathUtils.clamp(interaction.targetX + deltaY * 0.006, -0.32, 0.32);
+        }
         interaction.lastX = event.clientX;
         interaction.lastY = event.clientY;
-        interaction.targetY += deltaX * 0.008;
-        interaction.targetX = THREE.MathUtils.clamp(interaction.targetX + deltaY * 0.006, -0.32, 0.32);
         return;
       }
       const pointer = normalizedPointer(event);
       interaction.hoverX = pointer.y * 0.045;
       interaction.hoverY = pointer.x * 0.075;
+      renderer.domElement.classList.toggle('is-control', Boolean(controlAt(event)));
     }
 
     function handlePointerEnd(event) {
+      const wasDragging = interaction.dragging;
+      interaction.pressed = false;
       interaction.dragging = false;
       renderer.domElement.classList.remove('is-dragging');
+      if (!wasDragging) activateControl(controlAt(event));
+      renderer.domElement.classList.toggle('is-control', Boolean(controlAt(event)));
       if (renderer.domElement.hasPointerCapture(event.pointerId)) {
         renderer.domElement.releasePointerCapture(event.pointerId);
       }
@@ -146,7 +191,16 @@ function MachineCanvas({ seed, evolution = false }) {
       if (!interaction.dragging) {
         interaction.hoverX = 0;
         interaction.hoverY = 0;
+        renderer.domElement.classList.remove('is-control');
       }
+    }
+
+    function handleKeyDown(event) {
+      if ((event.key !== 'Enter' && event.key !== ' ') || !engine.machine?.interactions.length) return;
+      event.preventDefault();
+      const controls = engine.machine.interactions;
+      activateControl(controls[interaction.keyboardIndex % controls.length]);
+      interaction.keyboardIndex = (interaction.keyboardIndex + 1) % controls.length;
     }
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
@@ -154,6 +208,7 @@ function MachineCanvas({ seed, evolution = false }) {
     renderer.domElement.addEventListener('pointerup', handlePointerEnd);
     renderer.domElement.addEventListener('pointercancel', handlePointerEnd);
     renderer.domElement.addEventListener('pointerleave', handlePointerLeave);
+    renderer.domElement.addEventListener('keydown', handleKeyDown);
 
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
@@ -167,9 +222,12 @@ function MachineCanvas({ seed, evolution = false }) {
         this.machine?.dispose();
         this.machine = buildMachine(nextSeed);
         machineRoot.add(this.machine.group);
+        cyanLight.color.setHex(this.machine.plan.palette.primary);
+        limeLight.color.setHex(this.machine.plan.palette.secondary);
+        interaction.keyboardIndex = 0;
         renderer.domElement.setAttribute(
           'aria-label',
-          `${this.machine.family.name}, a procedurally generated three-dimensional instrument. Drag to inspect it.`,
+          `${this.machine.family.name}, a procedurally generated three-dimensional ${this.machine.plan.topology.name.toLowerCase()}. Drag to inspect it; click controls to operate them.`,
         );
       },
     };
@@ -184,7 +242,7 @@ function MachineCanvas({ seed, evolution = false }) {
       const targetY = interaction.targetY + (reducedMotion ? 0 : interaction.hoverY);
       interaction.currentX = THREE.MathUtils.damp(interaction.currentX, targetX, 6, 1 / 60);
       interaction.currentY = THREE.MathUtils.damp(interaction.currentY, targetY, 6, 1 / 60);
-      const orbit = reducedMotion ? 0 : elapsed * 0.075;
+      const orbit = reducedMotion ? 0 : elapsed * 0.035;
       machineRoot.rotation.x = interaction.currentX + (reducedMotion ? 0 : Math.sin(elapsed * 0.22) * 0.025);
       machineRoot.rotation.y = interaction.currentY + orbit;
       machineRoot.rotation.z = reducedMotion ? 0 : Math.sin(elapsed * 0.17) * 0.012;
@@ -207,6 +265,7 @@ function MachineCanvas({ seed, evolution = false }) {
       renderer.domElement.removeEventListener('pointerup', handlePointerEnd);
       renderer.domElement.removeEventListener('pointercancel', handlePointerEnd);
       renderer.domElement.removeEventListener('pointerleave', handlePointerLeave);
+      renderer.domElement.removeEventListener('keydown', handleKeyDown);
       engine.machine?.dispose();
       grid.geometry.dispose();
       for (const material of gridMaterials) material.dispose();
