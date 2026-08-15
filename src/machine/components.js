@@ -50,6 +50,7 @@ export function createMachineKit(random) {
   const materials = createMaterials();
   const disposables = [];
   const animations = [];
+  const evolvable = [];
 
   function outlined(parent, geometry, material = materials.dark, edgeMaterial = materials.edge) {
     const mesh = new THREE.Mesh(geometry, material);
@@ -181,6 +182,7 @@ export function createMachineKit(random) {
         edge: materials.edgeSoft,
       });
     }
+    evolvable.push(group);
     return group;
   }
 
@@ -213,6 +215,7 @@ export function createMachineKit(random) {
         });
       }
     }
+    evolvable.push(group);
     return group;
   }
 
@@ -242,6 +245,7 @@ export function createMachineKit(random) {
         });
       }
     }
+    evolvable.push(group);
     return group;
   }
 
@@ -270,6 +274,7 @@ export function createMachineKit(random) {
     });
     sphere({ parent: spinner, radius: 0.07, position: [0, 0.145, 0], material: materials.white });
     animations.push((time) => { spinner.rotation.y = time * speed; });
+    evolvable.push(group);
     return group;
   }
 
@@ -293,6 +298,7 @@ export function createMachineKit(random) {
       sphere({ parent: spinner, radius: 0.06, position: [0, 0.14, 0], material: materials.white });
       animations.push((time) => { spinner.rotation.y = time * (index ? -0.19 : 0.23); });
     }
+    evolvable.push(group);
     return group;
   }
 
@@ -312,6 +318,7 @@ export function createMachineKit(random) {
     torus({ parent: group, radius, tube: 0.05, position: [0, 0, radius * 0.63], material: materials.cyan });
     sphere({ parent: group, radius: radius * 0.12, position: [0, 0, radius * 0.66], material: materials.lime });
     disposables.push(coneGeometry);
+    evolvable.push(group);
     return group;
   }
 
@@ -334,6 +341,7 @@ export function createMachineKit(random) {
         material: index === nodes - 1 ? materials.lime : materials.hardware,
       });
     }
+    evolvable.push(group);
     return group;
   }
 
@@ -347,6 +355,7 @@ export function createMachineKit(random) {
     parent.add(group);
     cylinder({ parent: group, radius: 0.025, height, position: [0, height / 2, 0], material: materials.hardware, edge: materials.edgeSoft, segments: 12 });
     sphere({ parent: group, radius: 0.085, position: [0, height, 0], material });
+    evolvable.push(group);
     return group;
   }
 
@@ -378,6 +387,7 @@ export function createMachineKit(random) {
 
     return {
       group: root,
+      evolvable,
       update(time, reducedMotion) {
         if (!reducedMotion) {
           for (const animate of animations) animate(time);

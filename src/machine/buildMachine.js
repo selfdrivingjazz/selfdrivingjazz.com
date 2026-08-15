@@ -154,10 +154,64 @@ const BUILDERS = {
   'walking-sequencer': walkingSequencer,
 };
 
+function withEvolution(machine, random) {
+  const parts = machine.evolvable.map((object, index) => ({
+    object,
+    baseScale: object.scale.clone(),
+    baseRotationY: object.rotation.y,
+    direction: index % 2 === 0 ? 1 : -1,
+    value: 1,
+    target: 1,
+  }));
+  const baseUpdate = machine.update;
+  let previousTime = 0;
+  let nextMutation = between(random, 4.5, 6.5);
+
+  function mutate(time) {
+    const hidden = parts.filter((part) => part.target === 0);
+    const maximumHidden = Math.max(1, Math.min(3, Math.floor(parts.length * 0.34)));
+    const candidates = hidden.length >= maximumHidden ? hidden : parts;
+    const part = candidates[Math.floor(random() * candidates.length)];
+    part.target = part.target === 1 ? 0 : 1;
+    nextMutation = time + between(random, 5.5, 8);
+  }
+
+  return {
+    ...machine,
+    update(time, reducedMotion, evolution) {
+      baseUpdate(time, reducedMotion);
+      const delta = previousTime === 0 ? 0 : Math.min(0.1, time - previousTime);
+      previousTime = time;
+
+      if (!evolution || reducedMotion) {
+        for (const part of parts) {
+          part.value = 1;
+          part.target = 1;
+          part.object.visible = true;
+          part.object.scale.copy(part.baseScale);
+          part.object.rotation.y = part.baseRotationY;
+        }
+        if (nextMutation <= time) nextMutation = time + between(random, 4.5, 6.5);
+        return;
+      }
+
+      if (time >= nextMutation && parts.length > 0) mutate(time);
+      for (const part of parts) {
+        part.value += (part.target - part.value) * (1 - Math.exp(-delta * 1.35));
+        const eased = part.value * part.value * (3 - 2 * part.value);
+        part.object.visible = eased > 0.004;
+        part.object.scale.copy(part.baseScale).multiplyScalar(Math.max(0.001, eased));
+        part.object.rotation.y = part.baseRotationY + (1 - eased) * 0.22 * part.direction;
+      }
+    },
+  };
+}
+
 export function buildMachine(seed) {
   const random = seededRandom(seed);
   const family = familyForSeed(seed);
   const kit = createMachineKit(random);
   BUILDERS[family.id](kit, random);
-  return { ...kit.finish(between(random, 0, Math.PI * 2)), family };
+  const machine = kit.finish(between(random, 0, Math.PI * 2));
+  return { ...withEvolution(machine, random), family };
 }

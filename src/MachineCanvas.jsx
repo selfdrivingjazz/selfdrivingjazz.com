@@ -4,7 +4,7 @@ import { buildMachine } from './machine/buildMachine.js';
 
 const CAMERA_VIEW_HEIGHT = 6.7;
 
-function MachineCanvas({ seed }) {
+function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
   const engineRef = useRef(null);
   const [failed, setFailed] = useState(false);
@@ -176,7 +176,7 @@ function MachineCanvas({ seed }) {
     function render() {
       const elapsed = clock.getElapsedTime();
       const reducedMotion = reducedMotionQuery.matches;
-      engine.machine?.update(elapsed, reducedMotion);
+      engine.machine?.update(elapsed, reducedMotion, evolution);
 
       const targetX = interaction.targetX + (reducedMotion ? 0 : interaction.hoverX);
       const targetY = interaction.targetY + (reducedMotion ? 0 : interaction.hoverY);
