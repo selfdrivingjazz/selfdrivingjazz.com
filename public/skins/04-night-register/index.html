@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11120f">
+  <title>Night Register — Self-Driving Jazz</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,300..900&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --field: #11120f;
+      --ink: #ebe8df;
+      --muted: #aaa79e;
+      --signal: #e6aa34;
+      --hairline: rgba(235, 232, 223, 0.24);
+      --grotesk: "Archivo", "Arial Narrow", "Helvetica Neue", sans-serif;
+      --mono: "IBM Plex Mono", "Courier New", monospace;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4rem;
+      --page-pad: clamp(var(--space-4), 3vw, var(--space-6));
+      --content: 68rem;
+      --copy: 33rem;
+      --line: 1px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: dark;
+      background: var(--field);
+    }
+
+    body {
+      min-width: 20rem;
+      min-height: 100svh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        linear-gradient(var(--hairline), var(--hairline)) top var(--page-pad) left var(--page-pad) / calc(100% - (2 * var(--page-pad))) var(--line) no-repeat,
+        var(--field);
+      color: var(--ink);
+      font-family: var(--grotesk);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    a {
+      color: inherit;
+      font: inherit;
+    }
+
+    .page {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      width: min(100%, 100rem);
+      min-height: 100svh;
+      margin-inline: auto;
+      padding: calc(var(--page-pad) + var(--space-3)) var(--page-pad) var(--page-pad);
+    }
+
+    .folio,
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      font-family: var(--mono);
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    .folio p,
+    .status p {
+      margin: 0;
+    }
+
+    .folio__title {
+      color: var(--ink);
+    }
+
+    .folio__number,
+    .status__note {
+      color: var(--muted);
+    }
+
+    main {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      padding-block: var(--space-7);
+    }
+
+    .composition {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: min(100%, var(--content));
+      text-align: center;
+    }
+
+    .register {
+      display: grid;
+      justify-items: center;
+      gap: var(--space-3);
+      margin: 0 0 var(--space-6);
+    }
+
+    .mark {
+      position: relative;
+      display: grid;
+      width: clamp(7rem, 10vw, 9rem);
+      aspect-ratio: 1;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      outline: var(--line) solid transparent;
+      outline-offset: var(--space-2);
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mark:focus-visible {
+      outline-color: var(--signal);
+    }
+
+    .mark__art {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .mark__orbit,
+    .mark__needle,
+    .mark__rest {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 960ms var(--ease);
+    }
+
+    .mark__orbit {
+      fill: none;
+      stroke: var(--ink);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-dasharray: 262 153;
+    }
+
+    .mark__satellite {
+      fill: var(--signal);
+    }
+
+    .mark__disc {
+      fill: var(--ink);
+    }
+
+    .mark__core,
+    .mark__cut {
+      fill: var(--field);
+    }
+
+    .mark__needle {
+      fill: var(--signal);
+    }
+
+    .mark__rest {
+      fill: var(--field);
+    }
+
+    .mark[aria-pressed="true"] .mark__orbit {
+      transform: rotate(76deg);
+    }
+
+    .mark[aria-pressed="true"] .mark__needle {
+      transform: translateX(12px);
+    }
+
+    .mark[aria-pressed="true"] .mark__rest {
+      transform: translateY(-8px);
+    }
+
+    .register figcaption {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.5625rem;
+      letter-spacing: 0.15em;
+      line-height: 1.4;
+      text-transform: uppercase;
+    }
+
+    .name {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      font-weight: 690;
+      text-transform: uppercase;
+    }
+
+    .name__self {
+      font-size: clamp(2.15rem, 5.8vw, 5.75rem);
+      font-stretch: 90%;
+      letter-spacing: -0.072em;
+      line-height: 0.86;
+      white-space: nowrap;
+    }
+
+    .name__jazz {
+      margin-top: var(--space-2);
+      margin-left: -0.08em;
+      font-size: clamp(4.2rem, 10.8vw, 10.75rem);
+      font-stretch: 112%;
+      letter-spacing: -0.105em;
+      line-height: 0.72;
+      white-space: nowrap;
+    }
+
+    .name__offbeat {
+      display: inline-block;
+      transform: translateY(0.085em);
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: var(--space-4);
+      width: min(100%, var(--copy));
+      margin-top: var(--space-7);
+      padding-top: var(--space-4);
+      border-top: var(--line) solid var(--hairline);
+      text-align: left;
+    }
+
+    .intro__label {
+      margin: 0;
+      padding-top: 0.32em;
+      color: var(--signal);
+      font-family: var(--mono);
+      font-size: 0.5625rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      line-height: 1.5;
+      text-transform: uppercase;
+    }
+
+    .intro__copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(0.8125rem, 1.2vw, 0.9375rem);
+      font-weight: 400;
+      letter-spacing: -0.012em;
+      line-height: 1.55;
+    }
+
+    .status {
+      padding-top: var(--space-3);
+      border-top: var(--line) solid var(--hairline);
+    }
+
+    .status__light {
+      display: inline-block;
+      width: 0.4rem;
+      height: 0.4rem;
+      margin-right: var(--space-2);
+      border-radius: 50%;
+      background: var(--signal);
+      vertical-align: 0.02em;
+    }
+
+    @media (max-width: 34rem) {
+      .page {
+        padding-top: calc(var(--page-pad) + var(--space-3));
+      }
+
+      main {
+        padding-block: var(--space-8);
+      }
+
+      .register {
+        margin-bottom: var(--space-7);
+      }
+
+      .name__self {
+        letter-spacing: -0.065em;
+      }
+
+      .intro {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+        margin-top: var(--space-7);
+      }
+
+      .intro__label {
+        padding-top: 0;
+      }
+
+      .status__note {
+        display: none;
+      }
+    }
+
+    @media (max-height: 47rem) and (min-width: 34.01rem) {
+      main {
+        padding-block: var(--space-5);
+      }
+
+      .register {
+        margin-bottom: var(--space-4);
+      }
+
+      .mark {
+        width: 6.5rem;
+      }
+
+      .intro {
+        margin-top: var(--space-5);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mark__orbit,
+      .mark__needle,
+      .mark__rest {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="folio" aria-label="Prototype details">
+      <p class="folio__title">Night Register</p>
+      <p class="folio__number">04 / 06</p>
+    </header>
+
+    <main>
+      <div class="composition">
+        <figure class="register">
+          <button class="mark" type="button" aria-label="Shift the register" aria-pressed="false">
+            <svg class="mark__art" viewBox="0 0 180 180" aria-hidden="true">
+              <g class="mark__orbit">
+                <circle cx="90" cy="90" r="66" transform="rotate(-34 90 90)" />
+              </g>
+              <circle class="mark__satellite" cx="146" cy="55" r="4" />
+              <circle class="mark__disc" cx="90" cy="90" r="43" />
+              <circle class="mark__core" cx="90" cy="90" r="12" />
+              <rect class="mark__needle" x="87.5" y="48" width="5" height="84" rx="2.5" />
+              <g class="mark__rest">
+                <rect x="56" y="76" width="18" height="4" rx="2" />
+                <rect x="106" y="100" width="18" height="4" rx="2" />
+              </g>
+            </svg>
+          </button>
+          <figcaption id="mark-instruction">Shift the register</figcaption>
+        </figure>
+
+        <h1 class="name" aria-label="Self-Driving Jazz">
+          <span class="name__self" aria-hidden="true">Self-Driving</span>
+          <span class="name__jazz" aria-hidden="true">JA<span class="name__offbeat">Z</span>Z</span>
+        </h1>
+
+        <section class="intro" aria-labelledby="intro-label">
+          <h2 class="intro__label" id="intro-label">Introduction</h2>
+          <p class="intro__copy">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="status">
+      <p><span class="status__light" aria-hidden="true"></span>Works forthcoming</p>
+      <p class="status__note">Four beats / one rest</p>
+    </footer>
+  </div>
+
+  <script>
+    const mark = document.querySelector('.mark');
+    const instruction = document.querySelector('#mark-instruction');
+
+    mark.addEventListener('click', () => {
+      const shifted = mark.getAttribute('aria-pressed') !== 'true';
+      mark.setAttribute('aria-pressed', String(shifted));
+      mark.setAttribute('aria-label', shifted ? 'Return to the downbeat' : 'Shift the register');
+      instruction.textContent = shifted ? 'Return to the downbeat' : 'Shift the register';
+    });
+  </script>
+</body>
+</html>

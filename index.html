@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Self-Driving Jazz — aesthetic prototype switchboard." />
+    <title>Self-Driving Jazz / Prototype Switchboard</title>
+    <link rel="stylesheet" href="/src/switchboard.css" />
+  </head>
+  <body>
+    <header class="switchboard" aria-label="Prototype switchboard">
+      <a class="brand" href="/">SDJ<span>/</span>LAB</a>
+      <div class="readout" aria-live="polite">
+        <span id="position">01/06</span>
+        <strong id="title">Solar Score</strong>
+      </div>
+      <div class="controls">
+        <button id="previous" type="button" aria-label="Previous prototype">←</button>
+        <label>
+          <span class="sr-only">Choose prototype</span>
+          <select id="skin-select"></select>
+        </label>
+        <button id="next" type="button" aria-label="Next prototype">→</button>
+        <a id="direct-link" href="./skins/01-solar-score/index.html" target="_blank" rel="noreferrer">OPEN ↗</a>
+      </div>
+    </header>
+    <main>
+      <iframe id="stage" title="Self-Driving Jazz prototype: Solar Score"></iframe>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

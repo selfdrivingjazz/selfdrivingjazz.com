@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#d99a20">
+  <title>Solar Score — Self-Driving Jazz</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,900&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+    :root {
+      --ink: #17140f;
+      --ink-soft: #272117;
+      --saffron: #d99a20;
+      --saffron-light: #e4ad3a;
+      --paper: #ead9ae;
+      --space-1: .25rem;
+      --space-2: .5rem;
+      --space-3: .75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --space-6: 2rem;
+      --space-7: 3rem;
+      --space-8: 4rem;
+      --mono: 'IBM Plex Mono', 'Courier New', monospace;
+      --display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
+      --heavy: 'Archivo Black', Impact, sans-serif;
+      color-scheme: only light;
+      font-synthesis: none;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body { margin: 0; min-width: 20rem; min-height: 100%; }
+
+    body {
+      overflow-x: hidden;
+      color: var(--ink);
+      background: var(--saffron);
+      font-family: var(--mono);
+    }
+
+    .poster {
+      isolation: isolate;
+      position: relative;
+      min-height: 100svh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 22%, rgb(234 217 174 / .13) 0 .08rem, transparent .1rem) 0 0 / .42rem .42rem,
+        linear-gradient(112deg, transparent 0 63%, rgb(23 20 15 / .055) 63% 64%, transparent 64% 100%),
+        var(--saffron);
+    }
+
+    .poster::before {
+      content: '';
+      position: absolute;
+      z-index: 8;
+      inset: 0;
+      pointer-events: none;
+      opacity: .24;
+      mix-blend-mode: multiply;
+      background:
+        repeating-radial-gradient(ellipse at 83% 24%, transparent 0 .06rem, rgb(23 20 15 / .18) .08rem .1rem, transparent .12rem .3rem),
+        linear-gradient(91deg, transparent 0 49.8%, rgb(23 20 15 / .16) 50%, transparent 50.2% 100%);
+      background-size: 19rem 14rem, 100% 100%;
+    }
+
+    .poster::after {
+      content: '';
+      position: absolute;
+      z-index: 9;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      filter: url('#paper-noise');
+      background: var(--ink);
+      mix-blend-mode: multiply;
+    }
+
+    .artwork {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      color: var(--ink);
+    }
+
+    .orbit { animation: score-drift 16s linear infinite; }
+    .orbit-reverse { animation: score-drift 23s linear infinite reverse; }
+
+    .folio {
+      position: absolute;
+      z-index: 3;
+      top: var(--space-5);
+      left: clamp(var(--space-4), 2.2vw, var(--space-6));
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      max-width: 34rem;
+      font-size: clamp(.58rem, .75vw, .7rem);
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .folio__mark {
+      display: grid;
+      flex: 0 0 auto;
+      width: 3rem;
+      aspect-ratio: 1;
+      place-items: center;
+      border: .18rem solid currentColor;
+      border-radius: 50%;
+      font-family: var(--display);
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: -.08em;
+      transform: rotate(-12deg);
+    }
+
+    .folio p { margin: 0; }
+    .folio span { display: block; }
+
+    .title {
+      position: absolute;
+      z-index: 2;
+      top: 12%;
+      left: clamp(var(--space-4), 4vw, var(--space-8));
+      width: min(72vw, 72rem);
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(5.2rem, 13.4vw, 13rem);
+      font-weight: 900;
+      font-style: italic;
+      line-height: .69;
+      letter-spacing: -.07em;
+      text-transform: uppercase;
+      text-wrap: nowrap;
+    }
+
+    .title span { display: block; width: max-content; }
+
+    .title__self {
+      margin-left: .08em;
+      transform: rotate(-1.8deg) skewX(-2deg);
+      text-shadow: .018em .018em 0 var(--saffron-light), .038em .038em 0 var(--ink);
+    }
+
+    .title__driving {
+      position: relative;
+      z-index: 1;
+      margin-top: .07em;
+      padding: .03em .12em .08em .04em;
+      color: var(--saffron);
+      background: var(--ink);
+      clip-path: polygon(.8% 3%, 99% 0, 96.5% 92%, 1.8% 100%);
+      transform: rotate(1.15deg);
+      font-family: var(--heavy);
+      font-size: .68em;
+      font-style: normal;
+      letter-spacing: -.09em;
+      line-height: .94;
+    }
+
+    .title__jazz {
+      margin: .025em 0 0 .54em;
+      font-family: var(--heavy);
+      font-size: 1.18em;
+      font-style: normal;
+      line-height: .72;
+      letter-spacing: -.095em;
+      transform: rotate(-.8deg) scaleX(1.03);
+      transform-origin: left center;
+    }
+
+    .sun {
+      position: absolute;
+      z-index: 0;
+      top: 11%;
+      right: clamp(-8rem, -5vw, -3rem);
+      width: clamp(18rem, 36vw, 38rem);
+      aspect-ratio: 1;
+      border: clamp(.6rem, 1vw, 1rem) solid var(--ink);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, var(--ink) 0 .11rem, transparent .14rem) 0 0 / .48rem .48rem,
+        var(--saffron-light);
+      box-shadow: inset 0 0 0 .32rem var(--saffron), inset 0 0 0 .5rem var(--ink);
+      transform: rotate(8deg);
+    }
+
+    .sun::before,
+    .sun::after {
+      content: '';
+      position: absolute;
+      background: var(--ink);
+    }
+
+    .sun::before {
+      inset: 42% -16%;
+      clip-path: polygon(0 31%, 24% 20%, 25% 0, 50% 28%, 74% 9%, 75% 28%, 100% 14%, 98% 62%, 76% 70%, 73% 100%, 49% 73%, 25% 92%, 24% 68%, 1% 79%);
+    }
+
+    .sun::after {
+      inset: 18%;
+      border-radius: 50%;
+      background: var(--saffron);
+      box-shadow: 0 0 0 .3rem var(--ink);
+    }
+
+    .introduction {
+      position: absolute;
+      z-index: 5;
+      right: clamp(var(--space-4), 4vw, var(--space-8));
+      bottom: clamp(var(--space-5), 5vh, var(--space-8));
+      width: clamp(17rem, 26vw, 25rem);
+      padding: var(--space-5) var(--space-5) var(--space-6);
+      color: var(--paper);
+      background: var(--ink);
+      clip-path: polygon(0 3%, 100% 0, 98% 96%, 3% 100%);
+      transform: rotate(-1.2deg);
+    }
+
+    .introduction::before {
+      content: '✦';
+      position: absolute;
+      right: var(--space-4);
+      top: var(--space-3);
+      color: var(--saffron);
+      font-size: 1.25rem;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: var(--space-3);
+      color: var(--saffron);
+      font-family: var(--display);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+    }
+
+    .introduction p {
+      max-width: 34ch;
+      margin: 0;
+      font-size: clamp(.82rem, 1vw, 1rem);
+      line-height: 1.6;
+    }
+
+    .status {
+      position: absolute;
+      z-index: 5;
+      left: clamp(var(--space-4), 4vw, var(--space-8));
+      bottom: clamp(var(--space-5), 4vh, var(--space-7));
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border-block: .16rem solid var(--ink);
+      font-size: clamp(.62rem, .8vw, .75rem);
+      font-weight: 600;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      transform: rotate(1deg);
+    }
+
+    .status::before {
+      content: '';
+      width: .65rem;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: var(--ink);
+      box-shadow: 1rem 0 0 var(--ink), 2rem 0 0 var(--ink);
+      margin-right: 2rem;
+    }
+
+    .vertical-note {
+      position: absolute;
+      z-index: 3;
+      top: 15%;
+      right: var(--space-4);
+      font-size: .57rem;
+      font-weight: 600;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+    }
+
+    @keyframes score-drift {
+      to { stroke-dashoffset: -96; }
+    }
+
+    @media (min-width: 64rem) and (max-height: 46rem) {
+      .title { top: 10%; font-size: clamp(5rem, 12vw, 10rem); }
+      .introduction { bottom: var(--space-5); }
+    }
+
+    @media (max-width: 48rem) {
+      .poster { min-height: 52rem; }
+      .title {
+        top: 7.25rem;
+        left: var(--space-4);
+        width: calc(100% - 2rem);
+        font-size: clamp(4.3rem, 20.5vw, 8rem);
+        line-height: .72;
+      }
+      .title__driving { font-size: .65em; }
+      .title__jazz { margin-left: .16em; font-size: 1.16em; }
+      .sun {
+        top: 4.5rem;
+        right: -7rem;
+        width: 20rem;
+        opacity: .82;
+      }
+      .introduction {
+        right: var(--space-4);
+        bottom: 5.5rem;
+        width: min(25rem, calc(100% - 3rem));
+        padding: var(--space-5);
+      }
+      .status { bottom: var(--space-4); }
+      .vertical-note { display: none; }
+    }
+
+    @media (max-width: 24rem) {
+      .poster { min-height: 47rem; }
+      .folio { top: var(--space-4); left: var(--space-3); gap: var(--space-2); }
+      .folio__mark { width: 2.55rem; }
+      .title {
+        top: 6.2rem;
+        left: var(--space-3);
+        width: calc(100% - 1.5rem);
+        font-size: clamp(4rem, 21.2vw, 5rem);
+      }
+      .title__self { margin-left: 0; }
+      .title__driving { padding-right: .08em; }
+      .sun { top: 4rem; right: -8.5rem; }
+      .introduction {
+        right: var(--space-3);
+        bottom: 5rem;
+        width: calc(100% - 1.5rem);
+        padding: var(--space-4) var(--space-4) var(--space-5);
+      }
+      .introduction p { font-size: .78rem; line-height: 1.55; }
+      .status { left: var(--space-3); bottom: var(--space-4); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .orbit, .orbit-reverse { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="poster">
+    <svg class="artwork" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <filter id="paper-noise">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="19" stitchTiles="stitch"/>
+          <feColorMatrix type="saturate" values="0"/>
+        </filter>
+        <pattern id="dots" width="13" height="13" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="2.2" fill="currentColor"/>
+        </pattern>
+      </defs>
+
+      <g fill="none" stroke="currentColor" stroke-width="5" opacity=".92">
+        <path class="orbit" d="M-110 620C190 465 376 423 659 466S1144 653 1715 245" stroke-dasharray="25 14"/>
+        <path d="M-97 649C235 492 412 467 675 500S1124 705 1692 290"/>
+        <path class="orbit-reverse" d="M-77 681C259 526 426 501 692 534S1108 752 1681 335" stroke-dasharray="7 18"/>
+        <path d="M-51 711C275 562 442 538 710 568S1093 797 1665 378"/>
+        <path class="orbit" d="M-30 742C300 598 459 573 725 603S1077 843 1649 421" stroke-dasharray="42 13 5 13"/>
+      </g>
+
+      <g fill="currentColor">
+        <circle cx="225" cy="569" r="13"/><path d="M233 567h47v9h-47z"/>
+        <circle cx="745" cy="567" r="13"/><path d="M753 564h49v9h-49z" transform="rotate(14 753 564)"/>
+        <circle cx="1224" cy="624" r="13"/><path d="M1232 620h51v9h-51z" transform="rotate(-25 1232 620)"/>
+      </g>
+
+      <g opacity=".96">
+        <path fill="currentColor" d="M68 765l95-217 36 17-34 86 50 23-21 49-49-22-34 83z"/>
+        <path fill="var(--saffron)" d="M118 715l47-118 9 4-47 118z"/>
+        <path fill="currentColor" d="M1278 115l50-29 42 74-19 11 86 148-57 33-85-148-19 11-34-59z"/>
+        <ellipse cx="1327" cy="125" rx="77" ry="31" fill="none" stroke="currentColor" stroke-width="13" transform="rotate(60 1327 125)"/>
+        <path fill="url(#dots)" d="M1450 504l143-57 66 167-144 57z" transform="rotate(7 1450 504)"/>
+      </g>
+
+      <g fill="currentColor" opacity=".92">
+        <path d="M899 777c34-148 35-221 1-334l21-5c43 125 42 233 1 344z"/>
+        <path d="M883 457c-18-60 1-100 49-118 51-19 93 8 107 50 13 39-4 78-41 99-35 19-77 8-88-23 24 10 46 8 63-7 22-19 22-50 4-68-21-21-58-18-72 7-11 19-8 40 3 57z"/>
+        <ellipse cx="906" cy="782" rx="86" ry="24"/>
+        <path d="M862 620l125-77 10 16-125 78z"/>
+      </g>
+    </svg>
+
+    <header class="folio" aria-label="Edition details">
+      <span class="folio__mark" aria-hidden="true">SDJ</span>
+      <p><span>Autonomous music / irregular signals</span><span>Solar score no. 01 · transmission 2026</span></p>
+    </header>
+
+    <h1 class="title" aria-label="Self-Driving Jazz">
+      <span class="title__self">Self-</span>
+      <span class="title__driving">Driving</span>
+      <span class="title__jazz">Jazz</span>
+    </h1>
+
+    <div class="sun" aria-hidden="true"></div>
+
+    <section class="introduction" aria-labelledby="introduction-label">
+      <span class="eyebrow" id="introduction-label">A note from the orbit</span>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    </section>
+
+    <p class="status"><span>Works forthcoming</span></p>
+    <p class="vertical-note" aria-hidden="true">Compose · listen · depart the expected</p>
+  </main>
+</body>
+</html>
