@@ -97,7 +97,7 @@ a { color: inherit; }
 .home-main {
   height: calc(100svh - var(--header-height));
   min-height: 562px;
-  grid-template-rows: 72px auto minmax(190px, 1fr);
+  grid-template-rows: auto auto minmax(190px, 1fr);
   padding-bottom: 8px;
 }
 .page-intro { min-width: 0; }
@@ -417,7 +417,7 @@ a { color: inherit; }
   }
   .project-cover {
     width: min(100%, 960px);
-    margin-left: auto;
+    margin-inline: auto;
   }
 }
 
