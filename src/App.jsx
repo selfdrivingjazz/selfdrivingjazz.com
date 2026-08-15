@@ -1,23 +1,14 @@
 import { lazy, Suspense, useState } from 'react';
+import { familyForSeed, nextMachineSeed, specimenCode } from './machine/spec.js';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 
 const INITIAL_SEED = 0x5d4a7e11;
 
-function nextSeed(seed) {
-  let value = seed ^ (seed << 13);
-  value ^= value >>> 17;
-  value ^= value << 5;
-  return value >>> 0;
-}
-
-function specimenCode(seed) {
-  return seed.toString(16).padStart(8, '0').slice(-8).toUpperCase();
-}
-
 function App() {
   const [seed, setSeed] = useState(INITIAL_SEED);
   const code = specimenCode(seed);
+  const family = familyForSeed(seed);
 
   return (
     <div className="site-shell">
@@ -54,8 +45,8 @@ function App() {
               <MachineCanvas seed={seed} />
             </Suspense>
             <figcaption>
-              <span className="specimen-code" aria-live="polite">Machine / {code}</span>
-              <button type="button" onClick={() => setSeed((current) => nextSeed(current))}>
+              <span className="specimen-code" aria-live="polite">{family.name} / {code}</span>
+              <button type="button" onClick={() => setSeed((current) => nextMachineSeed(current))}>
                 Build another
                 <span aria-hidden="true">↗</span>
               </button>

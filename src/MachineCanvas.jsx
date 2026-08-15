@@ -165,6 +165,10 @@ function MachineCanvas({ seed }) {
         this.machine?.dispose();
         this.machine = buildMachine(nextSeed);
         machineRoot.add(this.machine.group);
+        renderer.domElement.setAttribute(
+          'aria-label',
+          `${this.machine.family.name}, a procedurally generated three-dimensional instrument. Drag to inspect it.`,
+        );
       },
     };
     engineRef.current = engine;
