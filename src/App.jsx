@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
+const RecordCrate = lazy(() => import('./RecordCrate.jsx'));
 
 const PROJECTS = [
   {
@@ -12,6 +13,7 @@ const PROJECTS = [
     status: 'ongoing',
     format: 'generative web system',
     collaborators: 'Self-Driving Jazz',
+    recordCover: '/records/0.webp',
     coverUrl: 'https://images.unsplash.com/photo-1772149394594-69b6d73302de?auto=format&fit=crop&w=1800&q=85',
     coverAlt: 'A modular synthesizer covered in knobs, patch points, and control markings.',
     creditName: 'Egor Komarov',
@@ -32,6 +34,7 @@ const PROJECTS = [
     status: 'in development',
     format: 'networked media',
     collaborators: 'Mars College',
+    recordCover: '/records/1.webp',
     coverUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1800&q=85',
     coverAlt: 'A musician performing under red stage lighting.',
     creditName: 'John Matychuk',
@@ -51,6 +54,7 @@ const PROJECTS = [
     status: 'active',
     format: 'research and publishing',
     collaborators: 'Various',
+    recordCover: '/records/2.webp',
     coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1800&q=85',
     coverAlt: 'A recording studio mixing desk and computer display.',
     creditName: 'Techivation',
@@ -59,6 +63,50 @@ const PROJECTS = [
     body: [
       'Transmission Studies is a running collection of prototypes, essays, and media objects concerned with autonomous production. The unit of work is a finished transmission: something another person can encounter, not merely a system that could eventually make things.',
       'The studies move between software, performance, publishing, and institutional fiction. Their shared question is simple: what would make machine-assisted media feel authored rather than merely generated?',
+    ],
+  },
+  {
+    slug: 'project-004',
+    label: 'project 004',
+    title: 'Ambient Communal Intelligence',
+    summary: 'A configurable intelligence layer for welcoming, coaching, connecting, and stewarding communities.',
+    year: '2026',
+    status: 'prototype',
+    format: 'protocol and community software',
+    collaborators: 'BestPossible.ai + Mars College',
+    recordCover: '/records/3.webp',
+    coverUrl: '/records/3.webp',
+    coverAlt: 'A retrofuturist illustrated record sleeve titled Bella Coven.',
+    creditLabel: 'Artwork',
+    creditName: 'Self-Driving Jazz archive',
+    creditUrl: 'https://github.com/jmilldotdev/selfrdrivingjazz.com',
+    creditSuffix: '',
+    outboundUrl: 'https://selfdrivingjazz.com',
+    body: [
+      'Ambient Communal Intelligence is a pattern for useful intelligence that lives with a community rather than above it. Greeter, Coach, Connector, and Steward functions share context while retaining explicit boundaries around privacy, consent, evidence, and human authority.',
+      'The first prototypes apply the protocol to BestPossible.ai and Mars College. The implementation explores both event-driven services and long-running agent processes without making either architecture part of the protocol itself.',
+    ],
+  },
+  {
+    slug: 'project-005',
+    label: 'project 005',
+    title: 'Agent Arcade',
+    summary: 'A playable environment for encountering agent behavior as something more legible than a benchmark score.',
+    year: '2026',
+    status: 'in development',
+    format: 'interactive software',
+    collaborators: 'Self-Driving Jazz',
+    recordCover: '/records/4.webp',
+    coverUrl: '/records/4.webp',
+    coverAlt: 'A colorful illustrated record sleeve titled Whoup.',
+    creditLabel: 'Artwork',
+    creditName: 'Self-Driving Jazz archive',
+    creditUrl: 'https://github.com/jmilldotdev/selfrdrivingjazz.com',
+    creditSuffix: '',
+    outboundUrl: 'https://selfdrivingjazz.com',
+    body: [
+      'Agent Arcade treats evaluation as an encounter. Instead of reducing an agent to a leaderboard row, it creates small playable situations in which behavior, judgment, style, and failure can be observed directly.',
+      'The project asks what changes when a benchmark becomes a venue: something people can visit, compare, discuss, and develop taste around.',
     ],
   },
 ];
@@ -112,7 +160,9 @@ function Header({ current }) {
       ? 'home'
       : window.location.pathname.startsWith('/projects')
         ? 'projects'
-        : undefined
+        : window.location.pathname === '/machine'
+          ? 'machine'
+          : undefined
   );
 
   return (
@@ -133,6 +183,7 @@ function Header({ current }) {
       <nav id="site-menu" className={`site-menu${menuOpen ? ' is-open' : ''}`} aria-label="Site">
         <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>home</a>
         <a href="/projects" aria-current={activePage === 'projects' ? 'page' : undefined}>projects</a>
+        <a href="/machine" aria-current={activePage === 'machine' ? 'page' : undefined}>machine</a>
         <a href="/about" aria-current={activePage === 'about' ? 'page' : undefined}>about</a>
         <a href="https://github.com/selfdrivingjazz" target="_blank" rel="noreferrer">github <span aria-hidden="true">↗</span></a>
         <a href="https://x.com/selfdrivingjazz" target="_blank" rel="noreferrer">x <span aria-hidden="true">↗</span></a>
@@ -150,12 +201,16 @@ function SiteShell({ children, className = '', current }) {
   );
 }
 
-function ProjectList({ includeMore = false }) {
+function ProjectList({ activeIndex, includeMore = false, onActivate, onLeave }) {
   return (
-    <ol className="project-list">
+    <ol className="project-list" onMouseLeave={onLeave}>
       {PROJECTS.map((project, index) => (
-        <li key={project.slug}>
-          <a href={`/projects/${project.slug}`}>
+        <li key={project.slug} className={index === activeIndex ? 'is-active' : undefined}>
+          <a
+            href={`/projects/${project.slug}`}
+            onFocus={() => onActivate?.(index)}
+            onMouseEnter={() => onActivate?.(index)}
+          >
             <span>{project.label}</span>
             <span>{String(index + 1).padStart(2, '0')}</span>
           </a>
@@ -171,6 +226,30 @@ function ProjectList({ includeMore = false }) {
 }
 
 function HomePage() {
+  const [activeProject, setActiveProject] = useState(0);
+
+  useEffect(() => {
+    const automaticQuery = window.matchMedia('(max-width: 760px)');
+    let interval;
+    function updateAutomaticMode() {
+      clearInterval(interval);
+      interval = undefined;
+      if (!automaticQuery.matches) {
+        setActiveProject(0);
+        return;
+      }
+      interval = window.setInterval(() => {
+        setActiveProject((index) => (index + 1) % PROJECTS.length);
+      }, 2600);
+    }
+    updateAutomaticMode();
+    automaticQuery.addEventListener('change', updateAutomaticMode);
+    return () => {
+      clearInterval(interval);
+      automaticQuery.removeEventListener('change', updateAutomaticMode);
+    };
+  }, []);
+
   return (
     <SiteShell className="home-page">
       <main className="shell-main home-main">
@@ -180,10 +259,32 @@ function HomePage() {
         </section>
 
         <section className="recent" aria-label="projects">
-          <ProjectList includeMore />
+          <ProjectList
+            activeIndex={activeProject}
+            onActivate={setActiveProject}
+            onLeave={() => setActiveProject(0)}
+          />
         </section>
 
-        <div className="home-machine" aria-label="Evolving procedural machine">
+        <div className="home-records" aria-label="Project record crate">
+          <Suspense fallback={null}>
+            <RecordCrate projects={PROJECTS} activeIndex={activeProject} />
+          </Suspense>
+        </div>
+      </main>
+    </SiteShell>
+  );
+}
+
+function MachinePage() {
+  return (
+    <SiteShell className="machine-page" current="machine">
+      <main className="shell-main machine-main">
+        <div className="page-intro section-heading">
+          <h1>generative machine</h1>
+          <a href="/">back</a>
+        </div>
+        <div className="machine-surface" aria-label="Evolving procedural machine">
           <Suspense fallback={null}>
             <MachineCanvas seed={HOME_MACHINE_SEED} evolution />
           </Suspense>
@@ -226,7 +327,7 @@ function ProjectDetailPage({ project }) {
 
           <figure className="project-cover">
             <img src={project.coverUrl} alt={project.coverAlt} />
-            <figcaption>Photo: <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a> / Unsplash</figcaption>
+            <figcaption>{project.creditLabel ?? 'Photo'}: <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a>{project.creditSuffix ?? ' / Unsplash'}</figcaption>
           </figure>
 
           <div className="project-body">
@@ -268,6 +369,7 @@ function AboutPage() {
 function App() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   if (path === '/about') return <AboutPage />;
+  if (path === '/machine') return <MachinePage />;
   if (path === '/projects') return <ProjectsPage />;
   const projectMatch = path.match(/^\/projects\/([^/]+)$/);
   if (projectMatch) {
