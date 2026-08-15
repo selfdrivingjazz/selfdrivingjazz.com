@@ -341,12 +341,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     let targetCrateRotation = FRONT_CRATE_ROTATION;
     let pointerGesture;
 
-    function resetCrateRotation() {
-      targetCrateRotation = FRONT_CRATE_ROTATION;
-    }
-
     function advanceCrate() {
-      resetCrateRotation();
       onAdvanceRef.current?.();
     }
 
