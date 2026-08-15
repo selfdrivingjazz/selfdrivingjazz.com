@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';

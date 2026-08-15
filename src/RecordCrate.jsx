@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
@@ -17,8 +19,8 @@ const FRONT_RECORD_Z = -0.6;
 const RIM_TARGET_Y = 1.25;
 const RIM_TARGET_Z = POST_Z;
 const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
-const VIEW_DIRECTION = new THREE.Vector3(1, 0.62, 1.18).normalize();
-const FRONT_CRATE_ROTATION = -0.08;
+const VIEW_DIRECTION = new THREE.Vector3(0, 0.62, 1.18).normalize();
+const FRONT_CRATE_ROTATION = 0;
 const ROTATION_PER_PIXEL = 0.008;
 const DRAG_THRESHOLD = 5;
 
