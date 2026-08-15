@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 const CRATE_WIDTH = 3.55;
 const CRATE_DEPTH = 3.18;
 const POST_SIZE = 0.14;
@@ -9,11 +10,11 @@ const POST_HEIGHT = 1.32;
 const SLEEVE_SIZE = 2.78;
 const SLEEVE_DEPTH = 0.075;
 const RECORD_SPACING = 0.135;
-const FLIP_ANGLE = 0.8;
-const INNER_FRONT_Z = POST_Z - POST_SIZE / 2 - 0.04;
-const FLIPPED_FRONT_OFFSET = SLEEVE_SIZE * Math.sin(FLIP_ANGLE)
-  + (SLEEVE_DEPTH / 2) * Math.cos(FLIP_ANGLE);
-const FRONT_RECORD_Z = INNER_FRONT_Z - FLIPPED_FRONT_OFFSET;
+const BASE_TOP = 0.08;
+const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
+const FRONT_RECORD_Z = -0.6;
+const SUPPORT_Z = POST_Z - POST_SIZE / 2 - 0.025;
+const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
 const VIEW_DIRECTION = new THREE.Vector3(1, 0.62, 1.18).normalize();
 
 function RecordFallback({ projects, activeIndex }) {
@@ -99,6 +100,37 @@ function RecordCrate({ projects, activeIndex }) {
     fill.position.set(3.5, 2.4, 2.8);
     scene.add(fill);
 
+    const world = new CANNON.World({
+      gravity: new CANNON.Vec3(0, -9.82, 0),
+      allowSleep: false,
+    });
+    world.broadphase = new CANNON.SAPBroadphase(world);
+    world.solver.iterations = 20;
+    world.solver.tolerance = 0.001;
+
+    const cratePhysicsMaterial = new CANNON.Material({ friction: 0.68, restitution: 0 });
+    const recordPhysicsMaterial = new CANNON.Material({ friction: 0.5, restitution: 0.01 });
+    world.addContactMaterial(new CANNON.ContactMaterial(
+      cratePhysicsMaterial,
+      recordPhysicsMaterial,
+      {
+        friction: 0.68,
+        restitution: 0,
+        contactEquationStiffness: 1e7,
+        contactEquationRelaxation: 4,
+      },
+    ));
+    world.addContactMaterial(new CANNON.ContactMaterial(
+      recordPhysicsMaterial,
+      recordPhysicsMaterial,
+      {
+        friction: 0.46,
+        restitution: 0,
+        contactEquationStiffness: 1e7,
+        contactEquationRelaxation: 4,
+      },
+    ));
+
     const geometries = [];
     const materials = new Set();
     const textures = [];
@@ -115,6 +147,11 @@ function RecordCrate({ projects, activeIndex }) {
     crate.rotation.y = -0.08;
     scene.add(crate);
 
+    const crateBody = new CANNON.Body({
+      mass: 0,
+      material: cratePhysicsMaterial,
+    });
+
     function box(size, position, material = crateMaterial) {
       const geometry = new THREE.BoxGeometry(...size);
       const mesh = new THREE.Mesh(geometry, material);
@@ -123,6 +160,10 @@ function RecordCrate({ projects, activeIndex }) {
       mesh.receiveShadow = true;
       crate.add(mesh);
       geometries.push(geometry);
+      crateBody.addShape(
+        new CANNON.Box(new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2)),
+        new CANNON.Vec3(...position),
+      );
       return mesh;
     }
 
@@ -138,9 +179,34 @@ function RecordCrate({ projects, activeIndex }) {
       box([POST_SIZE, POST_SIZE, CRATE_DEPTH - 0.1], [-POST_X, y, 0], crateMaterial);
       box([POST_SIZE, POST_SIZE, CRATE_DEPTH - 0.1], [POST_X, y, 0], crateMaterial);
     }
+    world.addBody(crateBody);
+
+    function anchorZFor(index) {
+      return FRONT_RECORD_Z - index * RECORD_SPACING;
+    }
+
+    function angleForSupport(index, supportZ) {
+      const reach = THREE.MathUtils.clamp(
+        (supportZ - anchorZFor(index)) / SLEEVE_SIZE,
+        -0.96,
+        0.96,
+      );
+      return Math.asin(reach);
+    }
+
+    function angleForSelection(index, selectedIndex) {
+      return angleForSupport(index, index < selectedIndex ? SUPPORT_Z : -SUPPORT_Z);
+    }
+
+    function centerFor(index, angle) {
+      return {
+        y: RECORD_ANCHOR_Y + Math.cos(angle) * SLEEVE_SIZE / 2,
+        z: anchorZFor(index) + Math.sin(angle) * SLEEVE_SIZE / 2,
+      };
+    }
 
     const textureLoader = new THREE.TextureLoader();
-    const pivots = projects.map((project, index) => {
+    const records = projects.map((project, index) => {
       const texture = textureLoader.load(project.recordCover);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -150,7 +216,7 @@ function RecordCrate({ projects, activeIndex }) {
 
       const geometry = new THREE.BoxGeometry(SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH);
       geometries.push(geometry);
-      const sleeve = new THREE.Mesh(geometry, [
+      const mesh = new THREE.Mesh(geometry, [
         sleeveEdgeMaterial,
         sleeveEdgeMaterial,
         sleeveEdgeMaterial,
@@ -158,19 +224,85 @@ function RecordCrate({ projects, activeIndex }) {
         coverMaterial,
         sleeveBackMaterial,
       ]);
-      sleeve.position.y = SLEEVE_SIZE / 2;
-      sleeve.castShadow = true;
-      sleeve.receiveShadow = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      crate.add(mesh);
 
-      const pivot = new THREE.Group();
-      pivot.position.set(0, 0.14, FRONT_RECORD_Z - index * RECORD_SPACING);
-      pivot.add(sleeve);
-      crate.add(pivot);
-      return { pivot, baseZ: pivot.position.z };
+      const initialAngle = angleForSelection(index, activeIndexRef.current);
+      const center = centerFor(index, initialAngle);
+      const body = new CANNON.Body({
+        mass: 0.42,
+        material: recordPhysicsMaterial,
+        position: new CANNON.Vec3(0, center.y, center.z),
+        quaternion: new CANNON.Quaternion().setFromAxisAngle(HINGE_AXIS, initialAngle),
+        linearDamping: 0.9,
+        angularDamping: 0.72,
+        allowSleep: false,
+      });
+      body.addShape(new CANNON.Box(new CANNON.Vec3(
+        SLEEVE_SIZE / 2,
+        SLEEVE_SIZE / 2,
+        SLEEVE_DEPTH / 2,
+      )));
+      world.addBody(body);
+
+      const hinge = new CANNON.HingeConstraint(body, crateBody, {
+        pivotA: new CANNON.Vec3(0, -SLEEVE_SIZE / 2, 0),
+        pivotB: new CANNON.Vec3(0, RECORD_ANCHOR_Y, anchorZFor(index)),
+        axisA: HINGE_AXIS,
+        axisB: HINGE_AXIS,
+        collideConnected: true,
+        maxForce: 40,
+      });
+      hinge.enableMotor();
+      hinge.setMotorMaxForce(7);
+      world.addConstraint(hinge);
+
+      return { mesh, body, hinge };
     });
+
+    function currentAngle(body) {
+      return 2 * Math.atan2(body.quaternion.x, body.quaternion.w);
+    }
+
+    function driveRecords() {
+      for (const [index, { body, hinge }] of records.entries()) {
+        const target = angleForSelection(index, activeIndexRef.current);
+        const error = Math.atan2(
+          Math.sin(target - currentAngle(body)),
+          Math.cos(target - currentAngle(body)),
+        );
+        hinge.setMotorSpeed(THREE.MathUtils.clamp(error * 7, -3.2, 3.2));
+        body.wakeUp();
+      }
+    }
+
+    function syncRecordMeshes() {
+      for (const { mesh, body } of records) {
+        mesh.position.set(body.position.x, body.position.y, body.position.z);
+        mesh.quaternion.set(
+          body.quaternion.x,
+          body.quaternion.y,
+          body.quaternion.z,
+          body.quaternion.w,
+        );
+      }
+    }
+
+    for (let step = 0; step < 90; step += 1) {
+      driveRecords();
+      world.step(1 / 120);
+    }
+    syncRecordMeshes();
+
     const framingPoints = [];
-    for (const rotation of [0, FLIP_ANGLE]) {
-      for (const { pivot } of pivots) pivot.rotation.x = rotation;
+    for (const supportZ of [-SUPPORT_Z, SUPPORT_Z]) {
+      for (const [index, { mesh }] of records.entries()) {
+        const angle = angleForSupport(index, supportZ);
+        const center = centerFor(index, angle);
+        mesh.position.set(0, center.y, center.z);
+        mesh.rotation.set(angle, 0, 0);
+      }
       crate.updateWorldMatrix(true, true);
       crate.traverse((object) => {
         if (!object.isMesh) return;
@@ -185,7 +317,7 @@ function RecordCrate({ projects, activeIndex }) {
         }
       });
     }
-    for (const { pivot } of pivots) pivot.rotation.x = 0;
+    syncRecordMeshes();
     crate.updateWorldMatrix(true, true);
 
     const framingCenter = new THREE.Box3().setFromPoints(framingPoints).getCenter(new THREE.Vector3());
@@ -205,8 +337,8 @@ function RecordCrate({ projects, activeIndex }) {
         const towardCamera = relative.dot(VIEW_DIRECTION);
         cameraDistance = Math.max(
           cameraDistance,
-          towardCamera + Math.abs(relative.dot(cameraVertical)) * 1.04 / tangentVertical,
-          towardCamera + Math.abs(relative.dot(cameraRight)) * 1.04 / tangentHorizontal,
+          towardCamera + Math.abs(relative.dot(cameraVertical)) * 1.06 / tangentVertical,
+          towardCamera + Math.abs(relative.dot(cameraRight)) * 1.06 / tangentHorizontal,
         );
       }
       camera.position.copy(framingCenter).addScaledVector(VIEW_DIRECTION, cameraDistance + 0.05);
@@ -229,16 +361,9 @@ function RecordCrate({ projects, activeIndex }) {
     let animationFrame;
     function render() {
       const delta = Math.min(0.05, clock.getDelta());
-      const damping = 1 - Math.exp(-delta * 8);
-      for (const [index, record] of pivots.entries()) {
-        const flipped = index < activeIndexRef.current;
-        const targetRotation = flipped ? FLIP_ANGLE : 0;
-        const targetY = 0.14;
-        const targetZ = record.baseZ;
-        record.pivot.rotation.x += (targetRotation - record.pivot.rotation.x) * damping;
-        record.pivot.position.y += (targetY - record.pivot.position.y) * damping;
-        record.pivot.position.z += (targetZ - record.pivot.position.z) * damping;
-      }
+      driveRecords();
+      world.step(1 / 60, delta, 3);
+      syncRecordMeshes();
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     }
