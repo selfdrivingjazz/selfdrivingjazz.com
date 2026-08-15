@@ -13,7 +13,7 @@ export default function ProjectsPage() {
     <SiteShell className="projects-page">
       <main className="shell-main projects-main">
         <div className="page-intro section-heading page-heading">
-          <h1>projects</h1>
+          <h1>all projects</h1>
           <Link href="/">back</Link>
         </div>
         <ProjectList />

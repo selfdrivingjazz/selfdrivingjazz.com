@@ -20,7 +20,7 @@ const RIM_TARGET_Y = 1.25;
 const RIM_TARGET_Z = POST_Z;
 const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
 const VIEW_DIRECTION = new THREE.Vector3(0, 0.62, 1.18).normalize();
-const FRONT_CRATE_ROTATION = -0.08;
+const FRONT_CRATE_ROTATION = -0.20;
 const ROTATION_PER_PIXEL = 0.008;
 const DRAG_THRESHOLD = 5;
 
