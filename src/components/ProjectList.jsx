@@ -5,7 +5,13 @@ import { PROJECTS } from '../data/projects.js';
 
 export default function ProjectList({ projects = PROJECTS, activeIndex, includeMore = false, onActivate, onLeave }) {
   return (
-    <ol className="project-list" onMouseLeave={onLeave}>
+    <ol
+      className="project-list"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) onLeave?.();
+      }}
+      onMouseLeave={onLeave}
+    >
       {projects.map((project, index) => (
         <li key={project.slug} className={index === activeIndex ? 'is-active' : undefined}>
           <Link

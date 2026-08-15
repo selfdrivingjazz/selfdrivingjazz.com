@@ -6,6 +6,7 @@ import ProjectList from './ProjectList.jsx';
 import RecordCrate from '../RecordCrate.jsx';
 
 const HOME_PROJECTS = PROJECTS.slice(0, 5);
+const RECORD_ADVANCE_INTERVAL_MS = 5000;
 
 
 export default function HomeExperience() {
@@ -13,27 +14,12 @@ export default function HomeExperience() {
   const [activeRow, setActiveRow] = useState(null);
 
   useEffect(() => {
-    const automaticQuery = window.matchMedia('(max-width: 760px)');
-    let interval;
-    function updateAutomaticMode() {
-      clearInterval(interval);
-      interval = undefined;
-      if (!automaticQuery.matches) {
-        setActiveProject(0);
-        setActiveRow(null);
-        return;
-      }
-      interval = window.setInterval(() => {
-        setActiveProject((index) => (index + 1) % PROJECTS.length);
-      }, 2600);
-    }
-    updateAutomaticMode();
-    automaticQuery.addEventListener('change', updateAutomaticMode);
-    return () => {
-      clearInterval(interval);
-      automaticQuery.removeEventListener('change', updateAutomaticMode);
-    };
-  }, []);
+    if (activeRow !== null) return undefined;
+    const interval = window.setInterval(() => {
+      setActiveProject((index) => (index + 1) % HOME_PROJECTS.length);
+    }, RECORD_ADVANCE_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [activeRow]);
 
   return (
     <main className="shell-main home-main">
@@ -48,22 +34,26 @@ export default function HomeExperience() {
           activeIndex={activeRow}
           includeMore
           onActivate={(index) => {
-            setActiveProject(index ?? 0);
+            if (index === null) {
+              setActiveRow(null);
+              return;
+            }
+            setActiveProject(index);
             setActiveRow(index);
           }}
-          onLeave={() => {
-            setActiveProject(0);
-            setActiveRow(null);
-          }}
+          onLeave={() => setActiveRow(null)}
         />
       </section>
 
-      <div className="home-records" aria-label="Project record crate">
+      <div
+        className="home-records"
+        aria-label={`Project record crate showing ${HOME_PROJECTS[activeProject].title}`}
+      >
         <RecordCrate
-          projects={PROJECTS}
+          projects={HOME_PROJECTS}
           activeIndex={activeProject}
           onAdvance={() => {
-            setActiveProject((index) => (index + 1) % PROJECTS.length);
+            setActiveProject((index) => (index + 1) % HOME_PROJECTS.length);
             setActiveRow(null);
           }}
         />
