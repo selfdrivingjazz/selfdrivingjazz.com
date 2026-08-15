@@ -5,6 +5,8 @@ import { PROJECTS } from '../data/projects.js';
 import ProjectList from './ProjectList.jsx';
 import RecordCrate from '../RecordCrate.jsx';
 
+const HOME_PROJECTS = PROJECTS.slice(0, 5);
+
 
 export default function HomeExperience() {
   const [activeProject, setActiveProject] = useState(0);
@@ -42,6 +44,7 @@ export default function HomeExperience() {
 
       <section className="recent" aria-label="projects">
         <ProjectList
+          projects={HOME_PROJECTS}
           activeIndex={activeRow}
           includeMore
           onActivate={(index) => {

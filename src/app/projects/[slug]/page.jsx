@@ -15,6 +15,8 @@ export async function generateMetadata({ params }) {
     path: `/projects/${project.slug}`,
     description: project.summary,
     projectSlug: project.slug,
+    socialTitle: `${project.title} — ${SITE_NAME}`,
+    imageAlt: project.coverAlt,
   });
 }
 
@@ -59,9 +61,11 @@ export default async function ProjectDetailPage({ params }) {
             <header className="detail-header">
               <h1>{project.title}</h1>
               <p>{project.summary}</p>
-              <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
-                visit project <span aria-hidden="true">↗</span>
-              </a>
+              {project.outboundUrl && (
+                <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
+                  visit project <span aria-hidden="true">↗</span>
+                </a>
+              )}
             </header>
 
             <figure className="project-cover">

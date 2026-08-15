@@ -10,6 +10,8 @@ export function pageMetadata({
   path = '/',
   description = DEFAULT_DESCRIPTION,
   projectSlug,
+  socialTitle = SITE_NAME,
+  imageAlt = projectSlug ? `${SITE_NAME} project preview` : `${SITE_NAME} preview`,
 } = {}) {
   const image = socialImage(projectSlug);
   return {
@@ -17,7 +19,7 @@ export function pageMetadata({
     description,
     alternates: { canonical: path },
     openGraph: {
-      title: SITE_NAME,
+      title: socialTitle,
       description,
       url: path,
       siteName: SITE_NAME,
@@ -27,12 +29,12 @@ export function pageMetadata({
         url: image,
         width: 1200,
         height: 630,
-        alt: projectSlug ? `${SITE_NAME} project preview` : `${SITE_NAME} preview`,
+        alt: imageAlt,
       }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: SITE_NAME,
+      title: socialTitle,
       description,
       images: [image],
     },

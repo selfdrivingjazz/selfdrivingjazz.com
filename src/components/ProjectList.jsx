@@ -3,17 +3,17 @@
 import Link from 'next/link';
 import { PROJECTS } from '../data/projects.js';
 
-export default function ProjectList({ activeIndex, includeMore = false, onActivate, onLeave }) {
+export default function ProjectList({ projects = PROJECTS, activeIndex, includeMore = false, onActivate, onLeave }) {
   return (
     <ol className="project-list" onMouseLeave={onLeave}>
-      {PROJECTS.map((project, index) => (
+      {projects.map((project, index) => (
         <li key={project.slug} className={index === activeIndex ? 'is-active' : undefined}>
           <Link
             href={`/projects/${project.slug}`}
             onFocus={() => onActivate?.(index)}
             onMouseEnter={() => onActivate?.(index)}
           >
-            <span>{project.label}</span>
+            <span>{project.title}</span>
             <span>{String(index + 1).padStart(2, '0')}</span>
           </Link>
         </li>
