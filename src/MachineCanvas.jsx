@@ -1,8 +1,152 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';
+import { generateMachinePlan } from './machine/grammar.js';
 
 const FRAMING_SCALE = 0.84;
+
+function color(value) {
+  return `#${value.toString(16).padStart(6, '0')}`;
+}
+
+function projectPosition([x, y, z]) {
+  return {
+    x: (x - z * 0.72) * 72,
+    y: (x * 0.22 + z * 0.38) * 45 - y * 70,
+  };
+}
+
+function MachineFallback({ seed }) {
+  const plan = useMemo(() => generateMachinePlan(seed), [seed]);
+  const modules = useMemo(
+    () => plan.modules
+      .map((module, index) => {
+        const projected = projectPosition(module.position);
+        return {
+          ...module,
+          index,
+          x: projected.x,
+          y: projected.y,
+          width: module.size[0] * 50,
+          height: module.size[1] * 54 + 16,
+          depth: module.size[2] * 12,
+        };
+      })
+      .sort((left, right) => left.y - right.y),
+    [plan],
+  );
+  const moduleByIndex = new Map(modules.map((module) => [module.index, module]));
+  const horizontal = modules.flatMap((module) => [
+    module.x - module.width / 2,
+    module.x + module.width / 2 + module.depth,
+  ]);
+  const vertical = modules.flatMap((module) => [
+    module.y - module.height - module.depth,
+    module.y + module.depth,
+  ]);
+  const minimumX = Math.min(...horizontal) - 36;
+  const maximumX = Math.max(...horizontal) + 36;
+  const minimumY = Math.min(...vertical) - 36;
+  const maximumY = Math.max(...vertical) + 36;
+  const viewBox = `${minimumX} ${minimumY} ${maximumX - minimumX} ${maximumY - minimumY}`;
+
+  return (
+    <svg
+      className="machine-fallback"
+      viewBox={viewBox}
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label={`${plan.specimen}, a procedurally generated two-dimensional ${plan.topology.name.toLowerCase()}.`}
+    >
+      <g className="fallback-grid" aria-hidden="true">
+        {Array.from({ length: 7 }, (_, index) => {
+          const offset = (index - 3) * 34;
+          return <line key={offset} x1={minimumX} y1={maximumY - offset} x2={maximumX} y2={maximumY - offset} />;
+        })}
+      </g>
+      <g className="fallback-joints" aria-hidden="true">
+        {plan.edges.map(([fromIndex, toIndex]) => {
+          const from = moduleByIndex.get(fromIndex);
+          const to = moduleByIndex.get(toIndex);
+          if (!from || !to) return null;
+          return (
+            <g key={`${fromIndex}-${toIndex}`}>
+              <line x1={from.x} y1={from.y - from.height / 2} x2={to.x} y2={to.y - to.height / 2} />
+              <circle cx={(from.x + to.x) / 2} cy={(from.y + to.y - from.height / 2 - to.height / 2) / 2} r="4" />
+            </g>
+          );
+        })}
+      </g>
+      <g className="fallback-modules" aria-hidden="true">
+        {modules.map((module) => {
+          const left = module.x - module.width / 2;
+          const top = module.y - module.height;
+          const accent = color(plan.palette[module.accent]);
+          const controls = module.role === 'keys' ? 6 : module.role === 'speaker' ? 2 : 4;
+          return (
+            <g key={module.id}>
+              {module.legs && (
+                <>
+                  <line className="fallback-leg" x1={left + 9} y1={module.y} x2={left + 2} y2={module.y + 20} />
+                  <line className="fallback-leg" x1={left + module.width - 9} y1={module.y} x2={left + module.width + 2} y2={module.y + 20} />
+                </>
+              )}
+              {module.form === 'drum' ? (
+                <>
+                  <rect x={left} y={top + module.depth / 2} width={module.width} height={module.height - module.depth / 2} rx={module.width / 8} fill={color(plan.palette.dark)} />
+                  <ellipse cx={module.x} cy={top + module.depth / 2} rx={module.width / 2} ry={Math.max(7, module.depth)} fill={color(plan.palette.surface)} stroke={accent} />
+                  <ellipse cx={module.x} cy={module.y} rx={module.width / 2} ry={Math.max(5, module.depth * 0.72)} fill={color(plan.palette.black)} />
+                </>
+              ) : (
+                <>
+                  <rect x={left} y={top} width={module.width} height={module.height} rx="3" fill={color(plan.palette.dark)} stroke={color(plan.palette.hardware)} />
+                  <polygon
+                    points={`${left},${top} ${left + module.depth},${top - module.depth} ${left + module.width + module.depth},${top - module.depth} ${left + module.width},${top}`}
+                    fill={color(plan.palette.surface)}
+                    stroke={color(plan.palette.hardware)}
+                  />
+                  <polygon
+                    points={`${left + module.width},${top} ${left + module.width + module.depth},${top - module.depth} ${left + module.width + module.depth},${module.y - module.depth} ${left + module.width},${module.y}`}
+                    fill={color(plan.palette.mid)}
+                    stroke={color(plan.palette.hardware)}
+                  />
+                </>
+              )}
+              {Array.from({ length: controls }, (_, index) => {
+                const spacing = module.width / (controls + 1);
+                const controlX = left + spacing * (index + 1);
+                const controlY = top + module.height * 0.52;
+                if (module.role === 'keys') {
+                  return (
+                    <rect
+                      key={index}
+                      x={controlX - Math.max(2, spacing * 0.28)}
+                      y={controlY - 6}
+                      width={Math.max(4, spacing * 0.56)}
+                      height="13"
+                      rx="1"
+                      fill={index % 3 === 1 ? accent : color(plan.palette.white)}
+                    />
+                  );
+                }
+                return (
+                  <circle
+                    key={index}
+                    cx={controlX}
+                    cy={controlY}
+                    r={module.role === 'speaker' ? Math.max(6, spacing * 0.38) : Math.max(3, spacing * 0.22)}
+                    fill={index % 3 === 1 ? color(plan.palette.secondary) : accent}
+                    stroke={color(plan.palette.white)}
+                  />
+                );
+              })}
+            </g>
+          );
+        })}
+      </g>
+    </svg>
+  );
+}
 
 function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
@@ -16,9 +160,18 @@ function MachineCanvas({ seed, evolution = false }) {
     if (!mount) return undefined;
 
     let renderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    } catch {
+    for (const options of [
+      { antialias: true, alpha: true, powerPreference: 'high-performance' },
+      { antialias: false, alpha: true, powerPreference: 'default' },
+    ]) {
+      try {
+        renderer = new THREE.WebGLRenderer(options);
+        break;
+      } catch {
+        renderer = undefined;
+      }
+    }
+    if (!renderer) {
       setFailed(true);
       return undefined;
     }
@@ -213,6 +366,11 @@ function MachineCanvas({ seed, evolution = false }) {
     renderer.domElement.addEventListener('pointercancel', handlePointerEnd);
     renderer.domElement.addEventListener('pointerleave', handlePointerLeave);
     renderer.domElement.addEventListener('keydown', handleKeyDown);
+    function handleContextLost(event) {
+      event.preventDefault();
+      setFailed(true);
+    }
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
 
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
@@ -274,6 +432,7 @@ function MachineCanvas({ seed, evolution = false }) {
       renderer.domElement.removeEventListener('pointercancel', handlePointerEnd);
       renderer.domElement.removeEventListener('pointerleave', handlePointerLeave);
       renderer.domElement.removeEventListener('keydown', handleKeyDown);
+      renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
       engine.machine?.dispose();
       grid.geometry.dispose();
       for (const material of gridMaterials) material.dispose();
@@ -287,11 +446,11 @@ function MachineCanvas({ seed, evolution = false }) {
     engineRef.current?.setMachine(seed);
   }, [seed]);
 
-  if (failed) {
-    return <p className="machine-fallback">The machine renderer is unavailable on this device.</p>;
-  }
-
-  return <div className="machine-stage" ref={mountRef} />;
+  return (
+    <div className="machine-stage" ref={mountRef}>
+      {failed && <MachineFallback seed={seed} />}
+    </div>
+  );
 }
 
 export default MachineCanvas;
