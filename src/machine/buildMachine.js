@@ -7,45 +7,31 @@ function between(random, minimum, maximum) {
   return minimum + (maximum - minimum) * random();
 }
 
-function connectorPort(module, toward) {
-  const [width, height, depth] = module.size;
-  const origin = new THREE.Vector3(module.position[0], module.position[1] + height * 0.52, module.position[2]);
-  const verticalDirection = Math.sign(toward.y - origin.y) || 1;
-  const direction = toward.clone().sub(origin).setY(0);
-  if (direction.lengthSq() < 0.001) direction.set(verticalDirection, 0, 0);
-  direction.normalize();
-  if (module.form === 'drum') {
-    return { origin, direction, distance: Math.min(width, depth) * 0.5 };
-  }
-  const cosine = Math.cos(module.rotation);
-  const sine = Math.sin(module.rotation);
-  const localX = direction.x * cosine - direction.z * sine;
-  const localZ = direction.x * sine + direction.z * cosine;
-  const xDistance = Math.abs(localX) < 0.001 ? Infinity : width / 2 / Math.abs(localX);
-  const zDistance = Math.abs(localZ) < 0.001 ? Infinity : depth / 2 / Math.abs(localZ);
-  return { origin, direction, distance: Math.min(xDistance, zDistance) };
+function addFloorStrip(kit, from, to, material) {
+  const deltaX = to.x - from.x;
+  const deltaZ = to.z - from.z;
+  const length = Math.hypot(deltaX, deltaZ);
+  if (length < 0.01) return;
+  kit.box({
+    parent: kit.root,
+    size: [0.055, 0.035, length],
+    position: [(from.x + to.x) / 2, -0.13, (from.z + to.z) / 2],
+    rotation: [0, Math.atan2(deltaX, deltaZ), 0],
+    material,
+    edge: kit.materials.edgeSoft,
+  });
 }
 
-function addJointMarker(kit, parent, module, toward, material) {
-  const { origin, direction, distance } = connectorPort(module, toward);
-  const surface = origin.clone().addScaledVector(direction, distance);
-  const stemLength = 0.18;
-  parent.updateWorldMatrix(true, false);
-  const worldRotation = parent.getWorldQuaternion(new THREE.Quaternion());
-  const localDirection = direction.clone().applyQuaternion(worldRotation.invert());
-  const localSurface = parent.worldToLocal(surface.clone());
-  const stem = kit.cylinder({
-    parent,
-    radius: 0.045,
-    height: stemLength,
-    position: localSurface.clone().addScaledVector(localDirection, stemLength / 2).toArray(),
-    material: kit.materials.hardware,
+function addFloorSocket(kit, point, material) {
+  kit.cylinder({
+    parent: kit.root,
+    radius: 0.085,
+    height: 0.045,
+    position: [point.x, -0.1, point.z],
+    material,
     edge: kit.materials.edgeSoft,
-    segments: 16,
+    segments: 20,
   });
-  stem.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), localDirection);
-  kit.sphere({ parent, radius: 0.09, position: localSurface.toArray(), material: kit.materials.hardware });
-  kit.sphere({ parent, radius: 0.07, position: localSurface.clone().addScaledVector(localDirection, stemLength).toArray(), material });
 }
 
 function addFeet(kit, parent, module) {
@@ -152,15 +138,37 @@ function buildModule(kit, module, random, index) {
   return parent;
 }
 
-function addTopologyJoints(kit, plan, moduleGroups) {
+function addTopologyRoutes(kit, plan) {
+  const minimumZ = Math.min(...plan.modules.map((module) => module.position[2] - module.size[2] / 2));
+  const maximumZ = Math.max(...plan.modules.map((module) => module.position[2] + module.size[2] / 2));
   for (const [index, [fromIndex, toIndex]] of plan.edges.entries()) {
     const fromModule = plan.modules[fromIndex];
     const toModule = plan.modules[toIndex];
-    const fromCenter = new THREE.Vector3(...fromModule.position);
-    const toCenter = new THREE.Vector3(...toModule.position);
+    const direction = index % 2 === 0 ? -1 : 1;
+    const lane = Math.floor(index / 2);
+    const railZ = direction < 0
+      ? minimumZ - 0.32 - lane * 0.1
+      : maximumZ + 0.32 + lane * 0.1;
+    const from = {
+      x: fromModule.position[0],
+      z: fromModule.position[2] + direction * (fromModule.size[2] / 2 + 0.08),
+    };
+    const to = {
+      x: toModule.position[0],
+      z: toModule.position[2] + direction * (toModule.size[2] / 2 + 0.08),
+    };
     const material = index % 2 === 0 ? kit.materials.primary : kit.materials.secondary;
-    addJointMarker(kit, moduleGroups[fromIndex], fromModule, toCenter, material);
-    addJointMarker(kit, moduleGroups[toIndex], toModule, fromCenter, material);
+    const points = [
+      from,
+      { x: from.x, z: railZ },
+      { x: to.x, z: railZ },
+      to,
+    ];
+    for (let pointIndex = 0; pointIndex < points.length - 1; pointIndex += 1) {
+      addFloorStrip(kit, points[pointIndex], points[pointIndex + 1], material);
+    }
+    addFloorSocket(kit, from, material);
+    addFloorSocket(kit, to, material);
   }
 }
 
@@ -232,9 +240,9 @@ export function buildMachine(seed) {
   const plan = generateMachinePlan(seed);
   const random = createSeededRandom(seed);
   const kit = createMachineKit(random, plan.palette);
-  const moduleGroups = plan.modules.map((module, index) => buildModule(kit, module, random, index));
-  addTopologyJoints(kit, plan, moduleGroups);
+  plan.modules.forEach((module, index) => buildModule(kit, module, random, index));
   const machine = kit.finish(plan.phase);
+  addTopologyRoutes(kit, plan);
   return {
     ...withEvolution(machine, random),
     family: { id: plan.topology.id, name: plan.specimen },

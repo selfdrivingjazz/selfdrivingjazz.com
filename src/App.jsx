@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 
@@ -85,13 +85,58 @@ function Logo({ large = false }) {
 }
 
 function Header({ current }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const headerRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function handlePointerDown(event) {
+      if (!headerRef.current?.contains(event.target)) setMenuOpen(false);
+    }
+    function handleKeyDown(event) {
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      buttonRef.current?.focus();
+    }
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuOpen]);
+
+  const activePage = current ?? (
+    window.location.pathname === '/'
+      ? 'home'
+      : window.location.pathname.startsWith('/projects')
+        ? 'projects'
+        : undefined
+  );
+
   return (
-    <header className="header">
+    <header className="header" ref={headerRef}>
       <a href="/" aria-label="Self-Driving Jazz home"><Logo /></a>
-      <a className="menu-link" href="/about" aria-label="About" aria-current={current === 'about' ? 'page' : undefined}>
+      <button
+        ref={buttonRef}
+        className="menu-link"
+        type="button"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-controls="site-menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((open) => !open)}
+      >
         <span />
         <span />
-      </a>
+      </button>
+      <nav id="site-menu" className={`site-menu${menuOpen ? ' is-open' : ''}`} aria-label="Site">
+        <a href="/" aria-current={activePage === 'home' ? 'page' : undefined}>home</a>
+        <a href="/projects" aria-current={activePage === 'projects' ? 'page' : undefined}>projects</a>
+        <a href="/about" aria-current={activePage === 'about' ? 'page' : undefined}>about</a>
+        <a href="https://github.com/selfdrivingjazz" target="_blank" rel="noreferrer">github <span aria-hidden="true">↗</span></a>
+        <a href="https://x.com/selfdrivingjazz" target="_blank" rel="noreferrer">x <span aria-hidden="true">↗</span></a>
+      </nav>
     </header>
   );
 }
@@ -209,7 +254,11 @@ function AboutPage() {
         <section aria-labelledby="about-title">
           <h1 id="about-title">self-driving jazz</h1>
           <p>We make autonomous media, functional fictions, and software with a point of view.</p>
-          <a href="/projects">view projects</a>
+          <div className="about-links">
+            <a href="/projects">view projects</a>
+            <a href="https://github.com/selfdrivingjazz" target="_blank" rel="noreferrer">github <span aria-hidden="true">↗</span></a>
+            <a href="https://x.com/selfdrivingjazz" target="_blank" rel="noreferrer">x <span aria-hidden="true">↗</span></a>
+          </div>
         </section>
       </main>
     </SiteShell>

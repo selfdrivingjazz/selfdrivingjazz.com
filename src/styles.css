@@ -45,17 +45,47 @@ a { color: inherit; }
 .menu-link {
   width: 42px;
   height: 42px;
+  padding: 0;
   display: grid;
   place-content: center;
   gap: 7px;
   border: 1px solid var(--line);
   border-radius: 50%;
-  text-decoration: none;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 .menu-link span { display: block; width: 18px; height: 1px; background: #e8e8e4; }
 .menu-link:hover,
 .menu-link:focus-visible,
-.menu-link[aria-current='page'] { border-color: #e8e8e4; outline: none; }
+.menu-link[aria-expanded='true'] { border-color: #e8e8e4; outline: none; }
+.site-menu {
+  position: absolute;
+  top: calc(100% + 1px);
+  right: 0;
+  width: min(260px, calc(100vw - var(--page-pad) * 2));
+  display: none;
+  border: 1px solid var(--line);
+  border-top: 0;
+  background: #080808;
+}
+.site-menu.is-open { display: block; }
+.site-menu a {
+  min-height: 42px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  color: #aaa9a4;
+  font-size: 13px;
+  text-decoration: none;
+}
+.site-menu a:first-child { border-top: 0; }
+.site-menu a:hover,
+.site-menu a:focus-visible,
+.site-menu a[aria-current='page'] { color: #f0f0ed; outline: none; }
 
 .shell-main { padding: var(--content-top) 0 32px; }
 .home-main,
@@ -281,11 +311,12 @@ a { color: inherit; }
 .about-main {
   min-height: calc(100svh - var(--header-height));
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 640px);
+  justify-content: space-between;
   align-items: center;
-  gap: clamp(36px, 8vw, 84px);
+  gap: clamp(48px, 8vw, 120px);
 }
-.about-mark { display: grid; place-items: center; }
+.about-mark { display: grid; place-items: center start; }
 .logo-large { width: clamp(120px, 25vw, 180px); height: auto; }
 .about-main h1 {
   margin: 0;
@@ -303,6 +334,11 @@ a { color: inherit; }
 .about-main section a { color: var(--muted); font-size: 13px; text-underline-offset: 4px; }
 .about-main section a:hover,
 .about-main section a:focus-visible { color: #f0f0ed; outline: none; }
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 22px;
+}
 
 @media (min-width: 761px) {
   :root {
@@ -316,23 +352,6 @@ a { color: inherit; }
 }
 
 @media (min-width: 900px) {
-  .home-main {
-    grid-template-columns: minmax(340px, .8fr) minmax(0, 1.2fr);
-    grid-template-rows: auto 1fr;
-    column-gap: clamp(48px, 7vw, 104px);
-  }
-  .home-main .page-intro {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .home-main .recent {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .home-main .home-machine {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
   .identity h1 {
     font-size: clamp(42px, 4.4vw, 64px);
   }
@@ -372,44 +391,44 @@ a { color: inherit; }
   }
   .project-meta {
     max-width: none;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: block;
     border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
   }
   .project-meta div,
   .project-meta div:last-child {
-    display: block;
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 14px;
     min-width: 0;
-    padding: 8px 10px 9px;
-    border-top: 0;
-    border-right: 1px solid var(--line);
+    padding: 11px 0;
+    border-top: 1px solid var(--line);
+    border-right: 0;
     border-bottom: 0;
   }
-  .project-meta div:nth-child(2n) {
-    padding-right: 0;
-    border-right: 0;
-  }
-  .project-meta div:nth-child(2n + 1) { padding-left: 0; }
-  .project-meta div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .project-meta div:first-child { border-top: 0; }
   .project-meta dt,
   .project-meta dd {
     overflow-wrap: anywhere;
-    font-size: 10px;
-    line-height: 1.25;
+    font-size: 13px;
+    line-height: 1.35;
   }
-  .project-meta dd { margin-top: 4px; }
+  .project-meta dd { margin-top: 0; }
   .project-writeup p {
     font-size: 14px;
     line-height: 1.45;
   }
   .about-main {
+    min-height: 0;
     grid-template-columns: 1fr;
-    align-content: center;
-    gap: 36px;
+    align-content: start;
+    align-items: start;
+    gap: 28px;
+    padding-top: 32px;
     padding-bottom: 56px;
   }
   .about-mark { justify-content: start; }
+  .logo-large { width: 120px; }
 }
 
 @media (max-height: 680px) and (max-width: 899px) {
