@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';
 
-const VIEW_MARGIN = 1.18;
+const FRAMING_SCALE = 0.84;
 
 function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
@@ -104,7 +104,7 @@ function MachineCanvas({ seed, evolution = false }) {
       const width = Math.max(1, mount.clientWidth);
       const height = Math.max(1, mount.clientHeight);
       const aspect = width / height;
-      const diameter = interaction.viewRadius * 2 * VIEW_MARGIN;
+      const diameter = interaction.viewRadius * 2 * FRAMING_SCALE;
       const viewHeight = aspect < 1 ? diameter / aspect : diameter;
       camera.left = (-viewHeight * aspect) / 2;
       camera.right = (viewHeight * aspect) / 2;
