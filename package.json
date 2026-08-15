@@ -1,5 +1,5 @@
 {
-  "name": "selfdrivingjazz-site-lab",
+  "name": "selfdrivingjazz.com",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,6 +9,11 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
     "vite": "^7.1.2"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }
