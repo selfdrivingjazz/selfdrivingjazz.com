@@ -7,20 +7,45 @@ function between(random, minimum, maximum) {
   return minimum + (maximum - minimum) * random();
 }
 
-function structuralLink(kit, from, to, material) {
-  const start = new THREE.Vector3(...from);
-  const end = new THREE.Vector3(...to);
-  const direction = end.clone().sub(start);
-  const length = direction.length();
-  const beam = kit.cylinder({
-    radius: 0.026,
-    height: length,
-    position: start.clone().add(end).multiplyScalar(0.5).toArray(),
-    material,
+function connectorPort(module, toward) {
+  const [width, height, depth] = module.size;
+  const origin = new THREE.Vector3(module.position[0], module.position[1] + height * 0.52, module.position[2]);
+  const verticalDirection = Math.sign(toward.y - origin.y) || 1;
+  const direction = toward.clone().sub(origin).setY(0);
+  if (direction.lengthSq() < 0.001) direction.set(verticalDirection, 0, 0);
+  direction.normalize();
+  if (module.form === 'drum') {
+    return { origin, direction, distance: Math.min(width, depth) * 0.5 };
+  }
+  const cosine = Math.cos(module.rotation);
+  const sine = Math.sin(module.rotation);
+  const localX = direction.x * cosine - direction.z * sine;
+  const localZ = direction.x * sine + direction.z * cosine;
+  const xDistance = Math.abs(localX) < 0.001 ? Infinity : width / 2 / Math.abs(localX);
+  const zDistance = Math.abs(localZ) < 0.001 ? Infinity : depth / 2 / Math.abs(localZ);
+  return { origin, direction, distance: Math.min(xDistance, zDistance) };
+}
+
+function addJointMarker(kit, parent, module, toward, material) {
+  const { origin, direction, distance } = connectorPort(module, toward);
+  const surface = origin.clone().addScaledVector(direction, distance);
+  const stemLength = 0.18;
+  parent.updateWorldMatrix(true, false);
+  const worldRotation = parent.getWorldQuaternion(new THREE.Quaternion());
+  const localDirection = direction.clone().applyQuaternion(worldRotation.invert());
+  const localSurface = parent.worldToLocal(surface.clone());
+  const stem = kit.cylinder({
+    parent,
+    radius: 0.045,
+    height: stemLength,
+    position: localSurface.clone().addScaledVector(localDirection, stemLength / 2).toArray(),
+    material: kit.materials.hardware,
     edge: kit.materials.edgeSoft,
-    segments: 10,
+    segments: 16,
   });
-  beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+  stem.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), localDirection);
+  kit.sphere({ parent, radius: 0.09, position: localSurface.toArray(), material: kit.materials.hardware });
+  kit.sphere({ parent, radius: 0.07, position: localSurface.clone().addScaledVector(localDirection, stemLength).toArray(), material });
 }
 
 function addFeet(kit, parent, module) {
@@ -127,42 +152,35 @@ function buildModule(kit, module, random, index) {
   return parent;
 }
 
-function addTopologyStructure(kit, plan) {
+function addTopologyJoints(kit, plan, moduleGroups) {
   for (const [index, [fromIndex, toIndex]] of plan.edges.entries()) {
-    if (index % 2 !== 0 && plan.topology.id !== 'bridge') continue;
     const fromModule = plan.modules[fromIndex];
     const toModule = plan.modules[toIndex];
-    const from = [fromModule.position[0], fromModule.position[1] + fromModule.size[1] * 0.45, fromModule.position[2]];
-    const to = [toModule.position[0], toModule.position[1] + toModule.size[1] * 0.45, toModule.position[2]];
-    structuralLink(kit, from, to, index % 3 === 0 ? kit.materials.primary : kit.materials.hardware);
-  }
-
-  for (const cable of plan.cables) {
-    kit.cable({
-      start: cable.from,
-      end: cable.to,
-      lift: cable.lift,
-      radius: cable.radius,
-      material: cable.material === 'secondary' ? kit.materials.secondary : kit.materials.primary,
-    });
+    const fromCenter = new THREE.Vector3(...fromModule.position);
+    const toCenter = new THREE.Vector3(...toModule.position);
+    const material = index % 2 === 0 ? kit.materials.primary : kit.materials.secondary;
+    addJointMarker(kit, moduleGroups[fromIndex], fromModule, toCenter, material);
+    addJointMarker(kit, moduleGroups[toIndex], toModule, fromCenter, material);
   }
 }
 
 function withEvolution(machine, random) {
-  const parts = machine.evolvable.map((object, index) => ({
-    object,
-    basePosition: object.position.clone(),
-    baseRotationY: object.rotation.y,
-    baseRotationZ: object.rotation.z,
-    lift: 0,
-    targetLift: 0,
-    turn: 0,
-    targetTurn: 0,
-    tilt: 0,
-    targetTilt: 0,
-    phase: random() * Math.PI * 2,
-    index,
-  }));
+  const parts = machine.evolvable
+    .filter((object) => object.parent === machine.group)
+    .map((object, index) => ({
+      object,
+      basePosition: object.position.clone(),
+      baseRotationY: object.rotation.y,
+      baseRotationZ: object.rotation.z,
+      lift: 0,
+      targetLift: 0,
+      turn: 0,
+      targetTurn: 0,
+      tilt: 0,
+      targetTilt: 0,
+      phase: random() * Math.PI * 2,
+      index,
+    }));
   const baseUpdate = machine.update;
   let previousTime = 0;
   let nextMutation = between(random, 3.4, 5.2);
@@ -178,7 +196,7 @@ function withEvolution(machine, random) {
     for (let index = 0; index < count; index += 1) {
       const candidateIndex = Math.floor(random() * candidates.length);
       const [part] = candidates.splice(candidateIndex, 1);
-      part.targetLift = between(random, 0.08, 0.42);
+      part.targetLift = between(random, 0.06, 0.3);
       part.targetTurn = between(random, -0.22, 0.22);
       part.targetTilt = between(random, -0.08, 0.08);
     }
@@ -214,8 +232,8 @@ export function buildMachine(seed) {
   const plan = generateMachinePlan(seed);
   const random = createSeededRandom(seed);
   const kit = createMachineKit(random, plan.palette);
-  for (const [index, module] of plan.modules.entries()) buildModule(kit, module, random, index);
-  addTopologyStructure(kit, plan);
+  const moduleGroups = plan.modules.map((module, index) => buildModule(kit, module, random, index));
+  addTopologyJoints(kit, plan, moduleGroups);
   const machine = kit.finish(plan.phase);
   return {
     ...withEvolution(machine, random),

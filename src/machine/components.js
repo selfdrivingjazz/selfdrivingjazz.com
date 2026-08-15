@@ -132,29 +132,6 @@ export function createMachineKit(random, palette) {
     return mesh;
   }
 
-  function cable({
-    parent = root,
-    start,
-    end,
-    material = materials.primary,
-    radius = 0.035,
-    lift = 0.45,
-  }) {
-    const startPoint = new THREE.Vector3(...start);
-    const endPoint = new THREE.Vector3(...end);
-    const firstControl = startPoint.clone().add(new THREE.Vector3(0, lift, 0));
-    const secondControl = endPoint.clone().add(new THREE.Vector3(0, lift, 0));
-    const curve = new THREE.CubicBezierCurve3(startPoint, firstControl, secondControl, endPoint);
-    const distance = startPoint.distanceTo(endPoint);
-    const geometry = new THREE.TubeGeometry(curve, Math.max(20, Math.ceil(distance * 12)), radius, 8, false);
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.castShadow = true;
-    parent.add(mesh);
-    sphere({ parent, radius: radius * 1.7, position: start, material: materials.hardware });
-    sphere({ parent, radius: radius * 1.7, position: end, material: materials.hardware });
-    disposables.push(geometry);
-    return mesh;
-  }
 
   function chassis({
     parent = root,
@@ -583,8 +560,10 @@ export function createMachineKit(random, palette) {
     const bounds = new THREE.Box3().setFromObject(root);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
+    const sphere = new THREE.Sphere();
     bounds.getSize(size);
     bounds.getCenter(center);
+    bounds.getBoundingSphere(sphere);
     const largest = Math.max(size.x, size.z, size.y * 1.25);
     const scale = Math.min(1, 6.4 / largest);
     root.scale.setScalar(scale);
@@ -594,6 +573,8 @@ export function createMachineKit(random, palette) {
       group: root,
       interactions,
       evolvable,
+      viewRadius: sphere.radius * scale,
+      viewCenterY: (sphere.center.y - bounds.min.y) * scale,
       update(time, reducedMotion) {
         if (!reducedMotion) {
           for (const animate of animations) animate(time);
@@ -616,7 +597,6 @@ export function createMachineKit(random, palette) {
     box,
     cylinder,
     sphere,
-    cable,
     chassis,
     keybed,
     padBank,

@@ -2,7 +2,66 @@ import { lazy, Suspense } from 'react';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 
-const PROJECTS = ['project 001', 'project 002', 'project 003'];
+const PROJECTS = [
+  {
+    slug: 'project-001',
+    label: 'project 001',
+    title: 'Ambient Instruments',
+    summary: 'A family of procedural machines that behave like instruments, interfaces, and small pieces of speculative infrastructure.',
+    year: '2026',
+    status: 'ongoing',
+    format: 'generative web system',
+    collaborators: 'Self-Driving Jazz',
+    coverUrl: 'https://images.unsplash.com/photo-1772149394594-69b6d73302de?auto=format&fit=crop&w=1800&q=85',
+    coverAlt: 'A modular synthesizer covered in knobs, patch points, and control markings.',
+    creditName: 'Egor Komarov',
+    creditUrl: 'https://unsplash.com/photos/bS19G9IbI78',
+    outboundUrl: 'https://selfdrivingjazz.com',
+    body: [
+      'Ambient Instruments asks what happens when a website behaves less like a document and more like a device. Each visit assembles a machine from a deterministic seed: recognizable controls, unfamiliar architecture, and enough internal logic to suggest a purpose without explaining it away.',
+      'The system is built from a compositional grammar rather than a catalog of finished models. Topology, modules, control surfaces, materials, and motion are selected independently, allowing related machines to share a visual language without collapsing into a handful of repeated silhouettes.',
+      'The work is an ongoing study in functional fiction. Some controls produce immediate changes, some alter the machine over time, and some exist mainly to make the visitor wonder what kind of institution would need such an object.',
+    ],
+  },
+  {
+    slug: 'project-002',
+    label: 'project 002',
+    title: 'Chiba Cable',
+    summary: 'A broadcast experiment about agents, places, and the strange programming that accumulates between them.',
+    year: '2026',
+    status: 'in development',
+    format: 'networked media',
+    collaborators: 'Mars College',
+    coverUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1800&q=85',
+    coverAlt: 'A musician performing under red stage lighting.',
+    creditName: 'John Matychuk',
+    creditUrl: 'https://unsplash.com/photos/gUK3lA3K7Yo',
+    outboundUrl: 'https://selfdrivingjazz.com',
+    body: [
+      'Chiba Cable treats a community agent as both a useful interface and a television character. It collects local transmissions, introduces unfinished work, and gives recurring activity a recognizable voice.',
+      'The project is being developed as a sequence of small broadcasts rather than one continuous feed. Each episode should be useful to the people involved while remaining strange enough to reward an accidental audience.',
+    ],
+  },
+  {
+    slug: 'project-003',
+    label: 'project 003',
+    title: 'Transmission Studies',
+    summary: 'Short investigations into how autonomous media acquires a point of view.',
+    year: '2025–26',
+    status: 'active',
+    format: 'research and publishing',
+    collaborators: 'Various',
+    coverUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1800&q=85',
+    coverAlt: 'A recording studio mixing desk and computer display.',
+    creditName: 'Techivation',
+    creditUrl: 'https://unsplash.com/photos/_fP7E6ePEwQ',
+    outboundUrl: 'https://selfdrivingjazz.com',
+    body: [
+      'Transmission Studies is a running collection of prototypes, essays, and media objects concerned with autonomous production. The unit of work is a finished transmission: something another person can encounter, not merely a system that could eventually make things.',
+      'The studies move between software, performance, publishing, and institutional fiction. Their shared question is simple: what would make machine-assisted media feel authored rather than merely generated?',
+    ],
+  },
+];
 
 function machineSeed() {
   const parameter = new URLSearchParams(window.location.search).get('seed');
@@ -25,21 +84,24 @@ function Logo({ large = false }) {
   );
 }
 
-function MenuLink() {
-  return (
-    <a className="menu-link" href="/about" aria-label="About">
-      <span />
-      <span />
-    </a>
-  );
-}
-
-function Header() {
+function Header({ current }) {
   return (
     <header className="header">
       <a href="/" aria-label="Self-Driving Jazz home"><Logo /></a>
-      <MenuLink />
+      <a className="menu-link" href="/about" aria-label="About" aria-current={current === 'about' ? 'page' : undefined}>
+        <span />
+        <span />
+      </a>
     </header>
+  );
+}
+
+function SiteShell({ children, className = '', current }) {
+  return (
+    <div className={`page site-shell ${className}`.trim()}>
+      <Header current={current} />
+      {children}
+    </div>
   );
 }
 
@@ -47,9 +109,11 @@ function ProjectList({ includeMore = false }) {
   return (
     <ol className="project-list">
       {PROJECTS.map((project, index) => (
-        <li key={project}>
-          <span>{project}</span>
-          <span>{String(index + 1).padStart(2, '0')}</span>
+        <li key={project.slug}>
+          <a href={`/projects/${project.slug}`}>
+            <span>{project.label}</span>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+          </a>
         </li>
       ))}
       {includeMore && (
@@ -63,10 +127,9 @@ function ProjectList({ includeMore = false }) {
 
 function HomePage() {
   return (
-    <div className="page home-page">
-      <Header />
-      <main className="home-main">
-        <section className="identity" aria-labelledby="home-title">
+    <SiteShell className="home-page">
+      <main className="shell-main home-main">
+        <section className="page-intro identity" aria-labelledby="home-title">
           <h1 id="home-title">self-driving jazz</h1>
           <p>an autonomous media empire</p>
         </section>
@@ -81,32 +144,75 @@ function HomePage() {
           </Suspense>
         </div>
       </main>
-    </div>
+    </SiteShell>
   );
 }
 
 function ProjectsPage() {
   return (
-    <div className="page interior-page">
-      <Header />
-      <main className="projects-main">
-        <div className="section-heading page-heading">
+    <SiteShell className="projects-page">
+      <main className="shell-main projects-main">
+        <div className="page-intro section-heading page-heading">
           <h1>projects</h1>
           <a href="/">back</a>
         </div>
         <ProjectList />
       </main>
-    </div>
+    </SiteShell>
+  );
+}
+
+function ProjectDetailPage({ project }) {
+  return (
+    <SiteShell className="detail-page">
+      <main className="shell-main detail-main">
+        <article className="project-detail">
+          <header className="detail-header">
+            <div className="detail-kicker">
+              <span>{project.label}</span>
+              <a href="/projects">all projects</a>
+            </div>
+            <h1>{project.title}</h1>
+            <p>{project.summary}</p>
+            <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
+              visit project <span aria-hidden="true">↗</span>
+            </a>
+          </header>
+
+          <figure className="project-cover">
+            <img src={project.coverUrl} alt={project.coverAlt} />
+            <figcaption>Photo: <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a> / Unsplash</figcaption>
+          </figure>
+
+          <div className="project-body">
+            <dl className="project-meta">
+              <div><dt>year</dt><dd>{project.year}</dd></div>
+              <div><dt>status</dt><dd>{project.status}</dd></div>
+              <div><dt>format</dt><dd>{project.format}</dd></div>
+              <div><dt>with</dt><dd>{project.collaborators}</dd></div>
+            </dl>
+            <div className="project-writeup">
+              {project.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            </div>
+          </div>
+        </article>
+      </main>
+    </SiteShell>
   );
 }
 
 function AboutPage() {
   return (
-    <main className="about-page">
-      <a href="/" aria-label="Back to Self-Driving Jazz">
-        <Logo large />
-      </a>
-    </main>
+    <SiteShell className="about-page" current="about">
+      <main className="shell-main about-main">
+        <div className="about-mark"><Logo large /></div>
+        <section aria-labelledby="about-title">
+          <h1 id="about-title">self-driving jazz</h1>
+          <p>We make autonomous media, functional fictions, and software with a point of view.</p>
+          <a href="/projects">view projects</a>
+        </section>
+      </main>
+    </SiteShell>
   );
 }
 
@@ -114,6 +220,11 @@ function App() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   if (path === '/about') return <AboutPage />;
   if (path === '/projects') return <ProjectsPage />;
+  const projectMatch = path.match(/^\/projects\/([^/]+)$/);
+  if (projectMatch) {
+    const project = PROJECTS.find(({ slug }) => slug === projectMatch[1]);
+    if (project) return <ProjectDetailPage project={project} />;
+  }
   return <HomePage />;
 }
 

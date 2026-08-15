@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';
 
-const CAMERA_VIEW_HEIGHT = 6.5;
+const VIEW_MARGIN = 1.18;
 
 function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
@@ -42,10 +42,10 @@ function MachineCanvas({ seed, evolution = false }) {
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-4, 4, 3.35, -3.35, 0.1, 80);
     camera.position.set(7.6, 6.2, 8.4);
-    camera.lookAt(0, 0.85, 0);
+    camera.lookAt(0, 0, 0);
 
     const machineRoot = new THREE.Group();
-    machineRoot.position.y = -0.42;
+    machineRoot.position.y = -0.8;
     scene.add(machineRoot);
 
     const hemisphere = new THREE.HemisphereLight(0xcad7d2, 0x050706, 2.4);
@@ -96,16 +96,20 @@ function MachineCanvas({ seed, evolution = false }) {
       hoverX: 0,
       hoverY: 0,
       keyboardIndex: 0,
+      viewRadius: 3,
+      viewCenterY: 0.8,
     };
 
     function resize() {
       const width = Math.max(1, mount.clientWidth);
       const height = Math.max(1, mount.clientHeight);
       const aspect = width / height;
-      camera.left = (-CAMERA_VIEW_HEIGHT * aspect) / 2;
-      camera.right = (CAMERA_VIEW_HEIGHT * aspect) / 2;
-      camera.top = CAMERA_VIEW_HEIGHT / 2;
-      camera.bottom = -CAMERA_VIEW_HEIGHT / 2;
+      const diameter = interaction.viewRadius * 2 * VIEW_MARGIN;
+      const viewHeight = aspect < 1 ? diameter / aspect : diameter;
+      camera.left = (-viewHeight * aspect) / 2;
+      camera.right = (viewHeight * aspect) / 2;
+      camera.top = viewHeight / 2;
+      camera.bottom = -viewHeight / 2;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
     }
@@ -224,6 +228,10 @@ function MachineCanvas({ seed, evolution = false }) {
         machineRoot.add(this.machine.group);
         cyanLight.color.setHex(this.machine.plan.palette.primary);
         limeLight.color.setHex(this.machine.plan.palette.secondary);
+        interaction.viewRadius = this.machine.viewRadius;
+        interaction.viewCenterY = this.machine.viewCenterY;
+        grid.position.y = -interaction.viewCenterY - 0.22;
+        resize();
         interaction.keyboardIndex = 0;
         renderer.domElement.setAttribute(
           'aria-label',
@@ -246,7 +254,7 @@ function MachineCanvas({ seed, evolution = false }) {
       machineRoot.rotation.x = interaction.currentX + (reducedMotion ? 0 : Math.sin(elapsed * 0.22) * 0.025);
       machineRoot.rotation.y = interaction.currentY + orbit;
       machineRoot.rotation.z = reducedMotion ? 0 : Math.sin(elapsed * 0.17) * 0.012;
-      machineRoot.position.y = -0.18 + (reducedMotion ? 0 : Math.sin(elapsed * 0.4) * 0.035);
+      machineRoot.position.y = -interaction.viewCenterY + (reducedMotion ? 0 : Math.sin(elapsed * 0.4) * 0.035);
       if (!reducedMotion) {
         cyanLight.position.x = 3.4 + Math.sin(elapsed * 0.31) * 1.4;
         limeLight.position.z = -2.5 + Math.cos(elapsed * 0.27) * 1.2;

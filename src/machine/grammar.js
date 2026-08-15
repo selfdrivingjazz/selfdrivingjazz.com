@@ -174,18 +174,6 @@ function makeModules(anchors, random) {
   });
 }
 
-function worldPort(module, side) {
-  const [width, height, depth] = module.size;
-  const localX = side === 'left' ? -width * 0.52 : 0;
-  const localZ = side === 'front' ? depth * 0.52 : 0;
-  const cosine = Math.cos(module.rotation);
-  const sine = Math.sin(module.rotation);
-  return [
-    module.position[0] + localX * cosine + localZ * sine,
-    module.position[1] + height + 0.12,
-    module.position[2] - localX * sine + localZ * cosine,
-  ];
-}
 
 export function generateMachinePlan(seed) {
   const random = createSeededRandom(seed);
@@ -193,15 +181,6 @@ export function generateMachinePlan(seed) {
   const palette = PALETTES[Math.floor(random() * PALETTES.length)];
   const modules = makeModules(anchorsForTopology(topology, random), random);
   const edges = connectedEdges(topology, modules.length);
-  const cableBudget = Math.min(edges.length, random.integer(1, 3));
-  const selectedEdges = [...edges].sort(() => random() - 0.5).slice(0, cableBudget);
-  const cables = selectedEdges.map(([fromIndex, toIndex], index) => ({
-    from: worldPort(modules[fromIndex], index % 2 ? 'left' : 'front'),
-    to: worldPort(modules[toIndex], index % 2 ? 'front' : 'left'),
-    lift: random.between(0.32, 0.7),
-    radius: random.between(0.025, 0.045),
-    material: index % 2 ? 'secondary' : 'primary',
-  }));
   const nameRandom = createSeededRandom((seed ^ 0xa5a5a5a5) >>> 0);
   return {
     seed: seed >>> 0,
@@ -209,7 +188,6 @@ export function generateMachinePlan(seed) {
     palette,
     modules,
     edges,
-    cables,
     specimen: `${nameRandom.pick(ADJECTIVES)} ${nameRandom.pick(NOUNS)}`,
     phase: random.between(0, Math.PI * 2),
   };
