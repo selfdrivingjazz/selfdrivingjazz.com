@@ -174,12 +174,18 @@ export function createMachineKit(random) {
     const keyWidth = (width - 0.18) / keys;
     for (let index = 0; index < keys; index += 1) {
       const accented = index === Math.floor(keys * 0.62);
-      box({
+      const restingY = 0.19;
+      const key = box({
         parent: group,
         size: [keyWidth - 0.035, 0.055, depth - 0.18],
-        position: [-width / 2 + 0.09 + keyWidth * (index + 0.5), 0.19, 0],
+        position: [-width / 2 + 0.09 + keyWidth * (index + 0.5), restingY, 0],
         material: accented ? materials.lime : index % 3 === 1 ? materials.mid : materials.surface,
         edge: materials.edgeSoft,
+      });
+      const phase = random() * Math.PI * 2;
+      const speed = 0.7 + random() * 1.7;
+      animations.push((time) => {
+        key.position.y = restingY - Math.max(0, Math.sin(time * speed + phase)) * 0.05;
       });
     }
     evolvable.push(group);
@@ -202,18 +208,89 @@ export function createMachineKit(random) {
     for (let row = 0; row < rows; row += 1) {
       for (let column = 0; column < columns; column += 1) {
         const active = (row * columns + column) % (columns + 1) === Math.floor(random() * 2);
-        box({
+        const restingY = 0.18;
+        const pad = box({
           parent: group,
           size: [cell - 0.09, 0.055, cell - 0.09],
           position: [
             (column - (columns - 1) / 2) * cell,
-            0.18,
+            restingY,
             (row - (rows - 1) / 2) * cell,
           ],
           material: active ? materials.cyan : materials.mid,
           edge: materials.edgeSoft,
         });
+        const phase = random() * Math.PI * 2;
+        const speed = 0.5 + random() * 1.4;
+        animations.push((time) => {
+          pad.position.y = restingY + Math.max(0, Math.sin(time * speed + phase)) * (active ? 0.055 : 0.022);
+        });
       }
+    }
+    evolvable.push(group);
+    return group;
+  }
+
+  function faderBank({
+    parent = root,
+    channels = 5,
+    spacing = 0.36,
+    travel = 0.9,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+  }) {
+    const group = applyTransform(new THREE.Group(), position, rotation);
+    parent.add(group);
+    const width = channels * spacing + 0.25;
+    box({ parent: group, size: [width, 0.15, travel + 0.28], position: [0, 0.075, 0], material: materials.black });
+    for (let index = 0; index < channels; index += 1) {
+      const x = (index - (channels - 1) / 2) * spacing;
+      box({ parent: group, size: [0.035, 0.022, travel], position: [x, 0.17, 0], material: materials.hardware, edge: materials.edgeSoft });
+      const phase = random() * Math.PI * 2;
+      const speed = 0.25 + random() * 0.55;
+      const handle = box({
+        parent: group,
+        size: [0.18, 0.12, 0.24],
+        position: [x, 0.24, Math.sin(phase) * travel * 0.3],
+        material: index % 3 === 0 ? materials.lime : materials.surface,
+        edge: materials.edgeSoft,
+      });
+      animations.push((time) => {
+        handle.position.z = Math.sin(time * speed + phase) * travel * 0.37;
+      });
+    }
+    evolvable.push(group);
+    return group;
+  }
+
+  function knobBank({
+    parent = root,
+    count = 5,
+    spacing = 0.42,
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+  }) {
+    const group = applyTransform(new THREE.Group(), position, rotation);
+    parent.add(group);
+    const width = count * spacing + 0.2;
+    box({ parent: group, size: [width, 0.14, 0.58], position: [0, 0.07, 0], material: materials.black });
+    for (let index = 0; index < count; index += 1) {
+      const control = new THREE.Group();
+      control.position.set((index - (count - 1) / 2) * spacing, 0, 0);
+      group.add(control);
+      cylinder({ parent: control, radius: 0.12, height: 0.13, position: [0, 0.19, 0], material: materials.hardware, edge: materials.edgeSoft, segments: 32 });
+      box({
+        parent: control,
+        size: [0.025, 0.035, 0.1],
+        position: [0, 0.27, -0.045],
+        material: index % 2 === 0 ? materials.cyan : materials.lime,
+        edge: materials.edgeSoft,
+      });
+      const phase = random() * Math.PI * 2;
+      const speed = 0.16 + random() * 0.34;
+      animations.push((time) => {
+        control.rotation.y = Math.sin(time * speed + phase) * 1.2;
+      });
     }
     evolvable.push(group);
     return group;
@@ -316,7 +393,13 @@ export function createMachineKit(random) {
     cone.position.z = radius * 0.22;
     group.add(cone);
     torus({ parent: group, radius, tube: 0.05, position: [0, 0, radius * 0.63], material: materials.cyan });
-    sphere({ parent: group, radius: radius * 0.12, position: [0, 0, radius * 0.66], material: materials.lime });
+    const driver = sphere({ parent: group, radius: radius * 0.12, position: [0, 0, radius * 0.66], material: materials.lime });
+    const phase = random() * Math.PI * 2;
+    animations.push((time) => {
+      const pulse = 1 + Math.sin(time * 2.4 + phase) * 0.09;
+      cone.scale.y = pulse;
+      driver.scale.setScalar(1 + Math.sin(time * 2.4 + phase) * 0.14);
+    });
     disposables.push(coneGeometry);
     evolvable.push(group);
     return group;
@@ -334,11 +417,17 @@ export function createMachineKit(random) {
     box({ parent: group, size: [length, 0.28, 0.5], position: [0, 0.14, 0], material: materials.black });
     box({ parent: group, size: [length - 0.28, 0.025, 0.045], position: [0, 0.3, 0], material: materials.cyan, edge: materials.edgeSoft });
     for (let index = 0; index < nodes; index += 1) {
-      sphere({
+      const restingY = 0.34;
+      const node = sphere({
         parent: group,
         radius: 0.075,
-        position: [-length * 0.38 + (length * 0.76 * index) / Math.max(1, nodes - 1), 0.34, 0],
+        position: [-length * 0.38 + (length * 0.76 * index) / Math.max(1, nodes - 1), restingY, 0],
         material: index === nodes - 1 ? materials.lime : materials.hardware,
+      });
+      const phase = (index / Math.max(1, nodes)) * Math.PI * 2;
+      animations.push((time) => {
+        node.position.y = restingY + Math.sin(time * 1.1 + phase) * 0.045;
+        node.position.z = Math.cos(time * 0.7 + phase) * 0.04;
       });
     }
     evolvable.push(group);
@@ -354,7 +443,11 @@ export function createMachineKit(random) {
     const group = applyTransform(new THREE.Group(), position);
     parent.add(group);
     cylinder({ parent: group, radius: 0.025, height, position: [0, height / 2, 0], material: materials.hardware, edge: materials.edgeSoft, segments: 12 });
-    sphere({ parent: group, radius: 0.085, position: [0, height, 0], material });
+    const receiver = sphere({ parent: group, radius: 0.085, position: [0, height, 0], material });
+    const phase = random() * Math.PI * 2;
+    animations.push((time) => {
+      receiver.scale.setScalar(1 + Math.sin(time * 1.6 + phase) * 0.16);
+    });
     evolvable.push(group);
     return group;
   }
@@ -413,6 +506,8 @@ export function createMachineKit(random) {
     chassis,
     keybed,
     padBank,
+    faderBank,
+    knobBank,
     patchBay,
     rotor,
     torus,

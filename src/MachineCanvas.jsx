@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buildMachine } from './machine/buildMachine.js';
 
-const CAMERA_VIEW_HEIGHT = 6.7;
+const CAMERA_VIEW_HEIGHT = 8.4;
 
 function MachineCanvas({ seed, evolution = false }) {
   const mountRef = useRef(null);
   const engineRef = useRef(null);
+  const evolutionRef = useRef(evolution);
+  evolutionRef.current = evolution;
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -176,15 +178,21 @@ function MachineCanvas({ seed, evolution = false }) {
     function render() {
       const elapsed = clock.getElapsedTime();
       const reducedMotion = reducedMotionQuery.matches;
-      engine.machine?.update(elapsed, reducedMotion, evolution);
+      engine.machine?.update(elapsed, reducedMotion, evolutionRef.current);
 
       const targetX = interaction.targetX + (reducedMotion ? 0 : interaction.hoverX);
       const targetY = interaction.targetY + (reducedMotion ? 0 : interaction.hoverY);
       interaction.currentX = THREE.MathUtils.damp(interaction.currentX, targetX, 6, 1 / 60);
       interaction.currentY = THREE.MathUtils.damp(interaction.currentY, targetY, 6, 1 / 60);
-      machineRoot.rotation.x = interaction.currentX;
-      machineRoot.rotation.y = interaction.currentY;
-      machineRoot.position.y = -0.42 + (reducedMotion ? 0 : Math.sin(elapsed * 0.45) * 0.025);
+      const orbit = reducedMotion ? 0 : elapsed * 0.075;
+      machineRoot.rotation.x = interaction.currentX + (reducedMotion ? 0 : Math.sin(elapsed * 0.22) * 0.025);
+      machineRoot.rotation.y = interaction.currentY + orbit;
+      machineRoot.rotation.z = reducedMotion ? 0 : Math.sin(elapsed * 0.17) * 0.012;
+      machineRoot.position.y = -0.18 + (reducedMotion ? 0 : Math.sin(elapsed * 0.4) * 0.035);
+      if (!reducedMotion) {
+        cyanLight.position.x = 3.4 + Math.sin(elapsed * 0.31) * 1.4;
+        limeLight.position.z = -2.5 + Math.cos(elapsed * 0.27) * 1.2;
+      }
 
       renderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);

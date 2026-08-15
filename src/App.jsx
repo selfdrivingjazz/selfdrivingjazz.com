@@ -2,8 +2,22 @@ import { lazy, Suspense } from 'react';
 
 const MachineCanvas = lazy(() => import('./MachineCanvas.jsx'));
 
-const PROJECTS = ['Project 001', 'Project 002', 'Project 003'];
-const HOME_MACHINE_SEED = 0x4f13246a;
+const PROJECTS = ['project 001', 'project 002', 'project 003'];
+
+function randomSeed() {
+  const value = new Uint32Array(1);
+  const previousValue = window.sessionStorage.getItem('sdj-machine-family');
+  const previousFamily = previousValue === null ? -1 : Number(previousValue);
+  let family;
+  do {
+    window.crypto.getRandomValues(value);
+    family = value[0] % 6;
+  } while (family === previousFamily);
+  window.sessionStorage.setItem('sdj-machine-family', String(family));
+  return value[0];
+}
+
+const HOME_MACHINE_SEED = randomSeed();
 
 function Logo({ large = false }) {
   return (
@@ -33,7 +47,7 @@ function Header() {
   );
 }
 
-function ProjectList() {
+function ProjectList({ includeMore = false }) {
   return (
     <ol className="project-list">
       {PROJECTS.map((project, index) => (
@@ -42,6 +56,11 @@ function ProjectList() {
           <span>{String(index + 1).padStart(2, '0')}</span>
         </li>
       ))}
+      {includeMore && (
+        <li className="more-row">
+          <a href="/projects"><span>more</span><span aria-hidden="true">↗</span></a>
+        </li>
+      )}
     </ol>
   );
 }
@@ -52,16 +71,12 @@ function HomePage() {
       <Header />
       <main className="home-main">
         <section className="identity" aria-labelledby="home-title">
-          <h1 id="home-title">Self-Driving Jazz</h1>
-          <p>Autonomous media empire.</p>
+          <h1 id="home-title">self-driving jazz</h1>
+          <p>an autonomous media empire</p>
         </section>
 
-        <section className="recent" aria-labelledby="recent-title">
-          <div className="section-heading">
-            <h2 id="recent-title">Recent projects</h2>
-            <a href="/projects">More</a>
-          </div>
-          <ProjectList />
+        <section className="recent" aria-label="projects">
+          <ProjectList includeMore />
         </section>
 
         <div className="home-machine" aria-label="Evolving procedural machine">
@@ -80,8 +95,8 @@ function ProjectsPage() {
       <Header />
       <main className="projects-main">
         <div className="section-heading page-heading">
-          <h1>Projects</h1>
-          <a href="/">Back</a>
+          <h1>projects</h1>
+          <a href="/">back</a>
         </div>
         <ProjectList />
       </main>
