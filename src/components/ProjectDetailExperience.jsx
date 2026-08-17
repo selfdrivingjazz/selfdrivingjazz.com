@@ -1,32 +1,12 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
 
 export default function ProjectDetailExperience({ project }) {
-  const router = useRouter();
-  const closeTimerRef = useRef(null);
-  const [closing, setClosing] = useState(false);
-
-  useEffect(() => () => window.clearTimeout(closeTimerRef.current), []);
-
-  function closeToCrate() {
-    if (closing) return;
-    const destination = `/?return=${encodeURIComponent(project.slug)}`;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      router.push(destination);
-      return;
-    }
-
-    setClosing(true);
-    closeTimerRef.current = window.setTimeout(() => router.push(destination), 620);
-  }
+  const closeDestination = `/?return=${encodeURIComponent(project.slug)}`;
 
   return (
     <main
-      className={`shell-main detail-main immersive-detail${closing ? ' is-closing' : ''}`}
+      className="shell-main detail-main immersive-detail"
       style={{ '--detail-art': `url("${project.coverUrl}")` }}
     >
       <div className="detail-art-backdrop" aria-hidden="true" />
@@ -37,9 +17,9 @@ export default function ProjectDetailExperience({ project }) {
           <span>{project.label}</span>
           <div className="detail-actions">
             <Link href="/projects">all projects</Link>
-            <button type="button" onClick={closeToCrate}>
+            <Link href={closeDestination}>
               close <span aria-hidden="true">×</span>
-            </button>
+            </Link>
           </div>
         </div>
 
