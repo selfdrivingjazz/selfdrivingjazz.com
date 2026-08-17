@@ -48,14 +48,11 @@ export default function HomeExperience() {
     setActiveProject((index) => (index + 1) % HOME_PROJECTS.length);
   }
 
-
   return (
     <main className="shell-main home-main">
       <section className="page-intro identity" aria-labelledby="home-title">
         <h1 id="home-title">self-driving jazz</h1>
-        <p>experiments in recursive media</p>
       </section>
-
 
       <div className="home-records" aria-label={`Project record crate showing ${project.title}`}>
         <RecordCrate
@@ -65,16 +62,16 @@ export default function HomeExperience() {
         />
       </div>
 
-      <Link
-        className="active-project"
-        href={`/projects/${project.slug}?from=crate`}
-        onClick={stopAutoAdvance}
-        aria-label={`Open ${project.title}`}
-      >
+      <aside className="active-project" aria-live={autoAdvanceEnabled ? 'off' : 'polite'}>
+        <div className="active-project-meta">
+          <span>project {String(activeProject + 1).padStart(3, '0')}</span>
+          <Link href={`/projects/${project.slug}?from=crate`} onClick={stopAutoAdvance}>
+            view project <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
         <h2>{project.title}</h2>
         <p>{project.summary}</p>
-      </Link>
-
+      </aside>
     </main>
   );
 }

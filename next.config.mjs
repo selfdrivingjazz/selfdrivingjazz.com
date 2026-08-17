@@ -2,6 +2,7 @@
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  devIndicators: false,
   allowedDevOrigins: ['jmill-desktop.tail587341.ts.net'],
   images: {
     remotePatterns: [

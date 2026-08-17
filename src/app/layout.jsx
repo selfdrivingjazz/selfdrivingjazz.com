@@ -1,3 +1,4 @@
+import { Instrument_Sans } from 'next/font/google';
 import '../styles.css';
 import JsonLd from '../components/JsonLd.jsx';
 import {
@@ -6,6 +7,13 @@ import {
   SITE_URL,
   pageMetadata,
 } from '../lib/metadata.js';
+
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  variable: '--font-instrument-sans',
+  display: 'swap',
+});
+
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +88,7 @@ const organizationData = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" className={instrumentSans.variable}>
       <body>
         <JsonLd data={organizationData} />
         {children}

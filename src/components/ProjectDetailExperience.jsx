@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-export default function ProjectDetailExperience({ project }) {
+export default function ProjectDetailExperience({ project, projectNumber, projectCount }) {
   const closeDestination = `/?return=${encodeURIComponent(project.slug)}`;
 
   return (
@@ -14,7 +14,9 @@ export default function ProjectDetailExperience({ project }) {
 
       <article className="project-detail">
         <div className="detail-kicker">
-          <span>{project.label}</span>
+          <span>
+            project {String(projectNumber).padStart(3, '0')} of {String(projectCount).padStart(3, '0')}
+          </span>
           <div className="detail-actions">
             <Link href="/projects">all projects</Link>
             <Link href={closeDestination}>
@@ -43,20 +45,10 @@ export default function ProjectDetailExperience({ project }) {
               alt={project.coverAlt}
               priority
             />
-            <figcaption>
-              {project.creditLabel ?? 'Photo'}:{' '}
-              <a href={project.creditUrl} target="_blank" rel="noreferrer">{project.creditName}</a>
-              {project.creditSuffix ?? ' / Unsplash'}
-            </figcaption>
           </figure>
         </div>
 
-        <a className="detail-scroll" href="#project-details">
-          <span>project details</span>
-          <span aria-hidden="true">↓</span>
-        </a>
-
-        <div className="project-body" id="project-details">
+        <div className="project-body">
           <dl className="project-meta">
             <div><dt>year</dt><dd>{project.year}</dd></div>
             <div><dt>status</dt><dd>{project.status}</dd></div>

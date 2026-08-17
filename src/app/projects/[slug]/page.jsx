@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import ProjectDetailExperience from '../../../components/ProjectDetailExperience.jsx';
 import JsonLd from '../../../components/JsonLd.jsx';
 import SiteShell from '../../../components/SiteShell.jsx';
-import { getProject } from '../../../data/projects.js';
+import { PROJECTS, getProject } from '../../../data/projects.js';
 import { SITE_NAME, SITE_URL, pageMetadata } from '../../../lib/metadata.js';
 
 
@@ -21,8 +21,9 @@ export async function generateMetadata({ params }) {
 
 export default async function ProjectDetailPage({ params }) {
   const { slug } = await params;
-  const project = getProject(slug);
-  if (!project) notFound();
+  const projectIndex = PROJECTS.findIndex((project) => project.slug === slug);
+  if (projectIndex < 0) notFound();
+  const project = PROJECTS[projectIndex];
 
   const projectUrl = `${SITE_URL}/projects/${project.slug}`;
   const imageUrl = project.coverUrl.startsWith('http')
@@ -49,7 +50,11 @@ export default async function ProjectDetailPage({ params }) {
   return (
     <SiteShell className="detail-page">
       <JsonLd data={projectData} />
-      <ProjectDetailExperience project={project} />
+      <ProjectDetailExperience
+        project={project}
+        projectNumber={projectIndex + 1}
+        projectCount={PROJECTS.length}
+      />
     </SiteShell>
   );
 }

@@ -1,7 +1,6 @@
-export const PROJECTS = [
+const projects = [
   {
     slug: 'introverse',
-    label: 'project 001',
     title: 'Introverse',
     summary: 'A card game for getting to know each other unforgettably.',
     year: '2024',
@@ -12,10 +11,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/introverse.png',
     coverUrl: '/project-covers/introverse.webp',
     coverAlt: 'A vivid mirrored corridor in cyan, yellow, orange, and pink beneath the title Introverse.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://introverse.one',
     body: [
       'Introverse is a card game for deep connection: a therapy session Trojan-horsed into a party game. Players move through six emotional archetypes and three levels of questions, games, and rituals.',
@@ -24,7 +19,6 @@ export const PROJECTS = [
   },
   {
     slug: 'whalechess',
-    label: 'project 002',
     title: 'Whalechess',
     summary: 'An onchain chess game with AI-generated custom pieces.',
     year: '2024',
@@ -35,10 +29,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/whalechess.png',
     coverUrl: '/project-covers/whalechess.webp',
     coverAlt: 'A retrofuturist chess board populated by whale-shaped pieces beneath the title Whalechess.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://ethglobal.com/showcase/whalechess-0wfdf',
     body: [
       'Whalechess is a fully onchain implementation of chess created at ETHGlobal Bangkok 2024. It adds custom pieces, collection-building, squad construction, and play-to-earn mechanics to the familiar game.',
@@ -47,7 +37,6 @@ export const PROJECTS = [
   },
   {
     slug: 'whoup',
-    label: 'project 003',
     title: 'WhoUp',
     summary: 'A social app for reprogramming your doomscrolling reflexes.',
     year: '2024',
@@ -58,10 +47,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/whoup.png',
     coverUrl: '/project-covers/whoup.webp',
     coverAlt: 'A glowing monolith rises from an alien garden and mountain landscape beneath the title WhoUp.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD (feat. Youyang)',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: null,
     body: [
       'WhoUp was built at the 2024 Edge City Lanna Hackathon to replace habitual phone checking with reflection and conversation. People can broadcast that they are free to talk instead of disappearing into a feed.',
@@ -70,7 +55,6 @@ export const PROJECTS = [
   },
   {
     slug: 'bombay-beachy-yami-ichi',
-    label: 'project 004',
     title: 'Bombay Beachy Yami Ichi',
     summary: 'An Internet Yami-Ichi held in Bombay Beach, California.',
     year: '2023',
@@ -81,10 +65,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/bombay-beachy-yami-ichi.png',
     coverUrl: '/project-covers/bombay-beachy-yami-ichi.webp',
     coverAlt: 'A surreal, brightly colored desert main street beneath the title Bombay Beachy Yami Ichi.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD (feat. Mars)',
-    creditUrl: 'https://mars.college',
-    creditSuffix: '',
     outboundUrl: 'https://bbyi.fyi',
     body: [
       'Bombay Beachy Yami Ichi was an Internet Yami-Ichi staged during the Bombay Beach Biennale. BCAD and a group of artists made small, strange projects for sale at a temporary market in the California desert.',
@@ -93,7 +73,6 @@ export const PROJECTS = [
   },
   {
     slug: 'coke-diffusion',
-    label: 'project 005',
     title: 'Coke Diffusion',
     summary: 'A cursed experiment in native advertising for generative media.',
     year: '2023',
@@ -104,10 +83,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/coke-diffusion.png',
     coverUrl: '/project-covers/coke-diffusion.webp',
     coverAlt: 'A red Coca-Cola-branded freight container sits in a desert rail yard beneath the title Coke Diffusion.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://www.bcad.one/project/4',
     body: [
       'Coke Diffusion was a Twitter bot that accepted a prompt and returned a Coca-Cola-themed generated image. It treated native advertising inside text-to-image systems as both a business model and a cursed creative constraint.',
@@ -116,7 +91,6 @@ export const PROJECTS = [
   },
   {
     slug: 'spaghettify',
-    label: 'project 006',
     title: 'Spaghettify',
     summary: 'An AI coding tool for making your code deliberately worse.',
     year: '2023',
@@ -127,10 +101,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/spaghettify.png',
     coverUrl: '/project-covers/spaghettify.webp',
     coverAlt: 'A colorful temple filled with tiny code displays beneath the title Spaghettify.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://spaghettify.dev',
     body: [
       'Inspired by GitHub Copilot Brushes, Spaghettify asks what would happen if an AI coding assistant optimized for making software worse.',
@@ -139,7 +109,6 @@ export const PROJECTS = [
   },
   {
     slug: 'swappy',
-    label: 'project 007',
     title: 'Swappy',
     summary: 'A natural-language interface for the Squid cross-chain protocol.',
     year: '2023',
@@ -150,10 +119,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/swappy.png',
     coverUrl: '/project-covers/swappy.webp',
     coverAlt: 'A cartoon gray puppy holds a blue cable amid flying paper planes beneath the title Swappy.',
-    creditLabel: 'Cover art',
-    creditName: 'jmill (feat. Pilot)',
-    creditUrl: 'https://jmill.dev',
-    creditSuffix: '',
     outboundUrl: 'https://app.buidlbox.io/ethdenver/ethdenver-2023/winners?projectId=2b03bc06-6be5-4c8e-9695-8bdaf3623479',
     body: [
       'Swappy is a natural-language interface for the Squid Router protocol. It translates a person’s intent into a cross-chain swap rather than asking them to reason directly about routes and bridges.',
@@ -162,7 +127,6 @@ export const PROJECTS = [
   },
   {
     slug: 'vibe-check',
-    label: 'project 008',
     title: 'Vibe Check',
     summary: 'Anonymous live questions and feedback for checking the mood of a room.',
     year: '2023',
@@ -173,10 +137,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/vibe-check.png',
     coverUrl: '/project-covers/vibe-check.webp',
     coverAlt: 'A neon library corridor recedes toward a blue portal beneath the title Vibe Check.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://vibecheck.lol',
     body: [
       'Vibe Check is an anonymous feedback app for live groups. A facilitator asks a question, the room answers in real time, and everyone gets a more legible picture of the prevailing mood.',
@@ -185,7 +145,6 @@ export const PROJECTS = [
   },
   {
     slug: 'bella-coven',
-    label: 'project 009',
     title: 'Bella Coven',
     summary: 'A Discord-based tarot reader chatbot built before ChatGPT.',
     year: '2022',
@@ -196,10 +155,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/bella-coven.png',
     coverUrl: '/project-covers/bella-coven.webp',
     coverAlt: 'A blue retrofuturist android poses on a radiant grid beneath the title Bella Coven.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://www.bcad.one/project/3',
     body: [
       'Bella Coven, Automated Diviner is a Discord-based tarot reader chatbot. Community members could ask for a reading and receive an interpretation in the shared chat.',
@@ -208,7 +163,6 @@ export const PROJECTS = [
   },
   {
     slug: 'mulabonding',
-    label: 'project 010',
     title: 'Mulabonding',
     summary: 'Thirty people and five chatbots writing a book together.',
     year: '2022',
@@ -219,10 +173,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/mulabonding.png',
     coverUrl: '/project-covers/mulabonding.webp',
     coverAlt: 'A desert horizon and radiant sun open onto an intricate geometric floor beneath the title Mulabonding.',
-    creditLabel: 'Cover art',
-    creditName: 'Mars',
-    creditUrl: 'https://mars.college',
-    creditSuffix: '',
     outboundUrl: 'https://drive.google.com/file/d/1-cUBuPIWJx8XtJQGxdj65_E3y80yvb4o/view?usp=sharing',
     body: [
       'Mulabonding: Teachings of the House Spirits (Vol. I) is a collaborative book created during the 2022 Mars College cohort by roughly thirty people and five GPT-3 chatbots.',
@@ -231,7 +181,6 @@ export const PROJECTS = [
   },
   {
     slug: 'pepperstake',
-    label: 'project 011',
     title: 'Pepperstake',
     summary: 'A social accountability protocol built on Ethereum.',
     year: '2022',
@@ -242,10 +191,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/pepperstake.png',
     coverUrl: '/project-covers/pepperstake.webp',
     coverAlt: 'A cheerful pink alien rides a saucer across a neon grid beneath the title Pepperstake.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://ethglobal.com/showcase/pepperstake-ksjxn',
     body: [
       'Pepperstake is a social accountability protocol that lets people define goals, attach stakes, and support one another in following through using Ethereum.',
@@ -254,7 +199,6 @@ export const PROJECTS = [
   },
   {
     slug: 'roadmaps-nft',
-    label: 'project 012',
     title: 'Roadmaps NFT',
     summary: '7,777 generative project roadmaps minted as onchain artifacts.',
     year: '2022',
@@ -265,10 +209,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/roadmaps-nft.png',
     coverUrl: '/project-covers/roadmaps-nft.webp',
     coverAlt: 'A luminous archive corridor lined with screens and paper beneath the title Roadmaps.',
-    creditLabel: 'Cover art',
-    creditName: 'BCAD',
-    creditUrl: 'https://www.bcad.one',
-    creditSuffix: '',
     outboundUrl: 'https://ethglobal.com/showcase/roadmaps-38th7',
     body: [
       'Roadmaps is a generative NFT project created for ETHGlobal NFTHack 2022. Inspired by Loot, it programmatically assembles 7,777 fictional project roadmaps entirely onchain.',
@@ -277,7 +217,6 @@ export const PROJECTS = [
   },
   {
     slug: 'doomer',
-    label: 'project 013',
     title: 'Doomer',
     summary: 'An unhinged GPT-3 chatbot built for group conversations.',
     year: '2021',
@@ -288,10 +227,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/doomer.png',
     coverUrl: '/project-covers/doomer.webp',
     coverAlt: 'A ring of screens, reaching hands, and a central mechanical eye beneath the title Doomer.',
-    creditLabel: 'Cover art',
-    creditName: 'jmill',
-    creditUrl: 'https://jmill.dev',
-    creditSuffix: '',
     outboundUrl: null,
     body: [
       'Doomer is a GPT-3-powered Discord chatbot for group chats. It occasionally interrupts the current conversation and can also complete text, simulate channels, and produce extended monologues.',
@@ -300,7 +235,6 @@ export const PROJECTS = [
   },
   {
     slug: 'viperbot',
-    label: 'project 014',
     title: 'ViperBot',
     summary: 'A Discord bot dispensing wisdom through Viper album covers.',
     year: '2021',
@@ -311,10 +245,6 @@ export const PROJECTS = [
     ogCover: '/project-covers/viperbot.png',
     coverUrl: '/project-covers/viperbot.webp',
     coverAlt: 'A black-and-white coiled viper sits against concentric geometric lines beneath the title ViperBot.',
-    creditLabel: 'Cover art',
-    creditName: 'jmill',
-    creditUrl: 'https://jmill.dev',
-    creditSuffix: '',
     outboundUrl: 'https://github.com/jmilldotdev/viperbot',
     body: [
       'ViperBot is a Discord bot that responds to the current conversation with an uncannily appropriate Viper album cover.',
@@ -322,6 +252,10 @@ export const PROJECTS = [
     ],
   },
 ];
+
+export const PROJECTS = projects.sort(
+  (left, right) => Number(right.year) - Number(left.year),
+);
 
 export function getProject(slug) {
   return PROJECTS.find((project) => project.slug === slug);
