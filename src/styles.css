@@ -639,7 +639,7 @@ a { color: inherit; }
   }
   .active-project {
     width: min(100%, 500px);
-    height: 220px;
+    height: 260px;
     grid-column: 1;
     grid-row: 1;
     align-self: center;
@@ -650,10 +650,16 @@ a { color: inherit; }
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
+    overflow: visible;
   }
   .active-project-meta > span { font-size: 12px; }
   .active-project-meta a { font-size: 15px; }
-  .active-project h2 { font-size: clamp(42px, 3.5vw, 56px); }
+  .active-project h2 {
+    display: block;
+    overflow: visible;
+    font-size: clamp(36px, 3.5vw, 56px);
+    -webkit-line-clamp: unset;
+  }
   .active-project p { max-width: 500px; font-size: 18px; }
   .detail-hero {
     min-height: min(740px, calc(100svh - var(--header-height) - 150px));
