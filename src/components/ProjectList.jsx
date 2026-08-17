@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { PROJECTS } from '../data/projects.js';
 
-export default function ProjectList({ projects = PROJECTS, activeIndex, includeMore = false, onActivate, onLeave }) {
+export default function ProjectList({
+  projects = PROJECTS,
+  activeIndex,
+  includeMore = false,
+  onActivate,
+  onLeave,
+  onOpen,
+}) {
   return (
     <ol
       className="project-list"
@@ -16,6 +23,11 @@ export default function ProjectList({ projects = PROJECTS, activeIndex, includeM
         <li key={project.slug} className={index === activeIndex ? 'is-active' : undefined}>
           <Link
             href={`/projects/${project.slug}`}
+            onClick={(event) => {
+              if (!onOpen) return;
+              event.preventDefault();
+              onOpen(index);
+            }}
             onFocus={() => onActivate?.(index)}
             onMouseEnter={() => onActivate?.(index)}
           >
