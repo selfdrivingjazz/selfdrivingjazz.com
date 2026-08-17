@@ -59,7 +59,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     renderer.setClearColor(0x080808, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.92;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.domElement.className = 'record-crate-canvas';
@@ -74,9 +74,9 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 40);
 
-    const ambient = new THREE.HemisphereLight(0xdce5e1, 0x050606, 2.1);
+    const ambient = new THREE.HemisphereLight(0xdce5e1, 0x050606, 1.7);
     scene.add(ambient);
-    const key = new THREE.DirectionalLight(0xffffff, 4.2);
+    const key = new THREE.DirectionalLight(0xffffff, 3.2);
     key.position.set(-3.5, 7, 5.5);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
@@ -85,7 +85,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     key.shadow.camera.top = 5;
     key.shadow.camera.bottom = -5;
     scene.add(key);
-    const fill = new THREE.PointLight(0x91d8ce, 3.2, 12, 2);
+    const fill = new THREE.PointLight(0x91d8ce, 1.8, 12, 2);
     fill.position.set(3.5, 2.4, 2.8);
     scene.add(fill);
 
@@ -205,7 +205,12 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       textures.push(texture);
-      const coverMaterial = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.74, metalness: 0.02 });
+      const coverMaterial = new THREE.MeshStandardMaterial({
+        map: texture,
+        color: 0xd8d8d8,
+        roughness: 0.9,
+        metalness: 0,
+      });
       materials.add(coverMaterial);
 
       const geometry = new THREE.BoxGeometry(SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH);
