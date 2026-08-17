@@ -10,7 +10,7 @@ export function Logo({ large = false }) {
   return (
     <Image
       className={large ? 'logo logo-large' : 'logo'}
-      src="/sdj-logo.jpg"
+      src="/sdj-logo.png"
       width={size}
       height={size}
       sizes={`${size}px`}

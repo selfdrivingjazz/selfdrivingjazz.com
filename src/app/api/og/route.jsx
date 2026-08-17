@@ -10,7 +10,7 @@ export async function GET(request) {
   const url = new URL(request.url);
   const projectIndex = PROJECTS.findIndex((project) => project.slug === url.searchParams.get('project'));
   const project = PROJECTS[projectIndex];
-  const artworkPath = project?.ogCover ?? '/sdj-logo.jpg';
+  const artworkPath = project?.ogCover ?? '/sdj-logo.png';
   const artwork = await readFile(path.join(process.cwd(), 'public', artworkPath.slice(1)));
   const artworkType = artworkPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
   const artworkUrl = `data:${artworkType};base64,${artwork.toString('base64')}`;
@@ -47,7 +47,7 @@ export async function GET(request) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {project && (
               <div style={{ color: '#8d8d89', fontSize: '18px', letterSpacing: '2px' }}>
-                {`project ${String(projectIndex + 1).padStart(3, '0')}`}
+                {`project ${String(PROJECTS.length - projectIndex).padStart(3, '0')}`}
               </div>
             )}
             {project && (

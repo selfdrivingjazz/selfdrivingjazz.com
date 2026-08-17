@@ -1,4 +1,4 @@
-import { Instrument_Sans } from 'next/font/google';
+import { Instrument_Sans, Instrument_Serif } from 'next/font/google';
 import '../styles.css';
 import JsonLd from '../components/JsonLd.jsx';
 import {
@@ -13,7 +13,12 @@ const instrumentSans = Instrument_Sans({
   variable: '--font-instrument-sans',
   display: 'swap',
 });
-
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-instrument-serif',
+  display: 'swap',
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -88,7 +93,7 @@ const organizationData = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={instrumentSans.variable}>
+    <html lang="en" className={`${instrumentSans.variable} ${instrumentSerif.variable}`}>
       <body>
         <JsonLd data={organizationData} />
         {children}

@@ -52,7 +52,7 @@ export default async function ProjectDetailPage({ params }) {
       <JsonLd data={projectData} />
       <ProjectDetailExperience
         project={project}
-        projectNumber={projectIndex + 1}
+        projectNumber={PROJECTS.length - projectIndex}
         projectCount={PROJECTS.length}
       />
     </SiteShell>

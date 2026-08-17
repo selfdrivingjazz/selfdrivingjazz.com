@@ -7,12 +7,20 @@ import RecordCrate from '../RecordCrate.jsx';
 
 const HOME_PROJECTS = PROJECTS.slice(0, 5);
 const RECORD_ADVANCE_INTERVAL_MS = 5000;
+const HOME_AMBIENCE = {
+  introverse: ['#3e8597', '#8d606d', '#b8874e'],
+  whalechess: ['#4392b4', '#466b8e', '#a66d4e'],
+  whoup: ['#218ba0', '#878e5a', '#d3ca70'],
+  'bombay-beachy-yami-ichi': ['#28a5bb', '#ce6f5b', '#edcf52'],
+  'coke-diffusion': ['#3f9bb7', '#b0362c', '#b0654f'],
+};
 
 export default function HomeExperience() {
   const autoAdvanceEnabledRef = useRef(true);
   const [activeProject, setActiveProject] = useState(0);
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(true);
   const project = HOME_PROJECTS[activeProject];
+  const ambience = HOME_AMBIENCE[project.slug];
 
   useEffect(() => {
     const returnSlug = new URLSearchParams(window.location.search).get('return');
@@ -43,9 +51,15 @@ export default function HomeExperience() {
 
   return (
     <main className="shell-main home-main">
-      <section className="page-intro identity" aria-labelledby="home-title">
-        <h1 id="home-title">self-driving jazz</h1>
-      </section>
+      <div
+        className="home-ambient"
+        style={{
+          '--ambient-a': ambience[0],
+          '--ambient-b': ambience[1],
+          '--ambient-c': ambience[2],
+        }}
+        aria-hidden="true"
+      />
 
       <div className="home-records" aria-label={`Project record crate showing ${project.title}`}>
         <RecordCrate
@@ -57,7 +71,7 @@ export default function HomeExperience() {
 
       <aside className="active-project" aria-live={autoAdvanceEnabled ? 'off' : 'polite'}>
         <div className="active-project-meta">
-          <span>project {String(activeProject + 1).padStart(3, '0')}</span>
+          <span>project {String(PROJECTS.length - activeProject).padStart(3, '0')}</span>
           <Link href={`/projects/${project.slug}?from=crate`} onClick={stopAutoAdvance}>
             view project <span aria-hidden="true">↗</span>
           </Link>
