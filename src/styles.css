@@ -307,10 +307,11 @@ a { color: inherit; }
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: #080808;
+  background: transparent;
   opacity: 1;
   transition: opacity 180ms ease, visibility 0s;
 }
+.record-fallback.is-failed { background: rgba(8, 8, 8, .72); }
 .record-fallback.is-hidden {
   visibility: hidden;
   opacity: 0;

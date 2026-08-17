@@ -1,7 +1,7 @@
 function RecordCrateFallback({ hidden = false, failed = false }) {
   return (
     <div
-      className={`record-fallback${hidden ? ' is-hidden' : ''}`}
+      className={`record-fallback${hidden ? ' is-hidden' : ''}${failed ? ' is-failed' : ''}`}
       aria-hidden={failed ? undefined : 'true'}
       role={failed ? 'status' : undefined}
     >

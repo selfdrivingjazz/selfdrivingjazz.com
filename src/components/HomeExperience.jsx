@@ -4,29 +4,20 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { PROJECTS } from '../data/projects.js';
 import RecordCrate from '../RecordCrate.jsx';
+import { HOME_AMBIENCE, HOME_PROJECTS } from '../data/homeProjects.js';
 
-const HOME_PROJECTS = PROJECTS.slice(0, 5);
 const RECORD_ADVANCE_INTERVAL_MS = 5000;
-const HOME_AMBIENCE = {
-  introverse: ['#3e8597', '#8d606d', '#b8874e'],
-  whalechess: ['#4392b4', '#466b8e', '#a66d4e'],
-  whoup: ['#218ba0', '#878e5a', '#d3ca70'],
-  'bombay-beachy-yami-ichi': ['#28a5bb', '#ce6f5b', '#edcf52'],
-  'coke-diffusion': ['#3f9bb7', '#b0362c', '#b0654f'],
-};
 
-export default function HomeExperience() {
+export default function HomeExperience({ initialProjectIndex = 0 }) {
   const autoAdvanceEnabledRef = useRef(true);
-  const [activeProject, setActiveProject] = useState(0);
+  const [activeProject, setActiveProject] = useState(initialProjectIndex);
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(true);
   const project = HOME_PROJECTS[activeProject];
   const ambience = HOME_AMBIENCE[project.slug];
 
   useEffect(() => {
     const returnSlug = new URLSearchParams(window.location.search).get('return');
-    const returnIndex = HOME_PROJECTS.findIndex(({ slug }) => slug === returnSlug);
-    if (returnIndex < 0) return;
-    setActiveProject(returnIndex);
+    if (!HOME_PROJECTS.some(({ slug }) => slug === returnSlug)) return;
     window.history.replaceState(null, '', '/');
   }, []);
 
