@@ -225,9 +225,9 @@ a { color: inherit; }
   overflow: hidden;
   border-top: 1px solid rgba(240, 240, 237, .22);
   color: #f0f0ed;
-  background: rgba(8, 8, 8, .76);
-  box-shadow: 0 -18px 42px rgba(0, 0, 0, .26);
-  backdrop-filter: blur(20px) saturate(1.08);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .active-project-meta {
   display: flex;
