@@ -7,7 +7,6 @@ import RecordCrate from '../RecordCrate.jsx';
 
 const HOME_PROJECTS = PROJECTS.slice(0, 5);
 const RECORD_ADVANCE_INTERVAL_MS = 5000;
-const AUTO_ADVANCE_DISABLED_KEY = 'sdj:crate-auto-disabled';
 
 export default function HomeExperience() {
   const autoAdvanceEnabledRef = useRef(true);
@@ -16,11 +15,6 @@ export default function HomeExperience() {
   const project = HOME_PROJECTS[activeProject];
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(AUTO_ADVANCE_DISABLED_KEY) === 'true') {
-      autoAdvanceEnabledRef.current = false;
-      setAutoAdvanceEnabled(false);
-    }
-
     const returnSlug = new URLSearchParams(window.location.search).get('return');
     const returnIndex = HOME_PROJECTS.findIndex(({ slug }) => slug === returnSlug);
     if (returnIndex < 0) return;
@@ -40,7 +34,6 @@ export default function HomeExperience() {
   function stopAutoAdvance() {
     autoAdvanceEnabledRef.current = false;
     setAutoAdvanceEnabled(false);
-    window.sessionStorage.setItem(AUTO_ADVANCE_DISABLED_KEY, 'true');
   }
 
   function handleManualAdvance() {
