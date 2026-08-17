@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { PROJECTS } from '../data/projects.js';
 import RecordCrate from '../RecordCrate.jsx';
@@ -11,7 +10,6 @@ const RECORD_ADVANCE_INTERVAL_MS = 5000;
 const AUTO_ADVANCE_DISABLED_KEY = 'sdj:crate-auto-disabled';
 
 export default function HomeExperience() {
-  const router = useRouter();
   const autoAdvanceEnabledRef = useRef(true);
   const [activeProject, setActiveProject] = useState(0);
   const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(true);
@@ -50,12 +48,6 @@ export default function HomeExperience() {
     setActiveProject((index) => (index + 1) % HOME_PROJECTS.length);
   }
 
-  function openProject(index) {
-    const selectedProject = HOME_PROJECTS[index];
-    stopAutoAdvance();
-    setActiveProject(index);
-    router.push(`/projects/${selectedProject.slug}?from=crate`);
-  }
 
   return (
     <main className="shell-main home-main">
@@ -73,22 +65,15 @@ export default function HomeExperience() {
         />
       </div>
 
-      <aside className="active-project" aria-live={autoAdvanceEnabled ? 'off' : 'polite'}>
-        <div className="active-project-meta">
-          <span>project {String(activeProject + 1).padStart(2, '0')} of {String(HOME_PROJECTS.length).padStart(2, '0')}</span>
-          <span>{project.year}</span>
-        </div>
-        <div className="active-project-copy">
-          <h2>{project.title}</h2>
-          <p>{project.summary}</p>
-        </div>
-        <div className="active-project-actions">
-          <button type="button" onClick={() => openProject(activeProject)}>
-            open project <span aria-hidden="true">↗</span>
-          </button>
-          <Link href="/projects">all projects</Link>
-        </div>
-      </aside>
+      <Link
+        className="active-project"
+        href={`/projects/${project.slug}?from=crate`}
+        onClick={stopAutoAdvance}
+        aria-label={`Open ${project.title}`}
+      >
+        <h2>{project.title}</h2>
+        <p>{project.summary}</p>
+      </Link>
 
     </main>
   );
