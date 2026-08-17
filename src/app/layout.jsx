@@ -1,4 +1,4 @@
-import { Instrument_Sans, Instrument_Serif } from 'next/font/google';
+import { Recursive, Syne } from 'next/font/google';
 import '../styles.css';
 import JsonLd from '../components/JsonLd.jsx';
 import {
@@ -8,15 +8,17 @@ import {
   pageMetadata,
 } from '../lib/metadata.js';
 
-const instrumentSans = Instrument_Sans({
+const recursive = Recursive({
   subsets: ['latin'],
-  variable: '--font-instrument-sans',
+  weight: 'variable',
+  axes: ['CASL', 'MONO'],
+  variable: '--font-recursive',
   display: 'swap',
 });
-const instrumentSerif = Instrument_Serif({
+const syne = Syne({
   subsets: ['latin'],
-  weight: '400',
-  variable: '--font-instrument-serif',
+  weight: 'variable',
+  variable: '--font-syne',
   display: 'swap',
 });
 
@@ -93,7 +95,7 @@ const organizationData = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${instrumentSans.variable} ${instrumentSerif.variable}`}>
+    <html lang="en" className={`${recursive.variable} ${syne.variable}`}>
       <body>
         <JsonLd data={organizationData} />
         {children}
