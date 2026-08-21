@@ -88,6 +88,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     const fill = new THREE.PointLight(0x91d8ce, 1.8, 12, 2);
     fill.position.set(3.5, 2.4, 2.8);
     scene.add(fill);
+    const animateLights = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const world = new CANNON.World({
       gravity: new CANNON.Vec3(0, -9.82, 0),
@@ -419,6 +420,13 @@ function RecordCrate({ projects, activeIndex, onAdvance }) {
     let animationFrame;
     function render() {
       const delta = Math.min(0.05, clock.getDelta());
+      const elapsed = clock.elapsedTime;
+      if (animateLights) {
+        key.position.x = -3.5 + Math.sin(elapsed * 0.19) * 0.5;
+        key.position.z = 5.5 + Math.cos(elapsed * 0.14) * 0.35;
+        fill.position.x = 3.5 + Math.cos(elapsed * 0.22) * 0.65;
+        fill.position.y = 2.4 + Math.sin(elapsed * 0.17) * 0.28;
+      }
       const rotationDelta = Math.atan2(
         Math.sin(targetCrateRotation - crate.rotation.y),
         Math.cos(targetCrateRotation - crate.rotation.y),

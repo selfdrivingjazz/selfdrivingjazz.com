@@ -678,6 +678,10 @@ a { color: inherit; }
   .home-records {
     margin-inline: calc(var(--page-pad) * -1);
   }
+  .active-project {
+    background: #080808;
+    box-shadow: 0 -18px 42px rgba(0, 0, 0, .26);
+  }
 }
 @media (max-width: 560px) {
   .detail-main { padding-top: 12px; padding-bottom: 48px; }
@@ -753,7 +757,10 @@ a { color: inherit; }
     gap: 8px;
   }
   .active-project { padding-top: 14px; }
-  .active-project h2 { font-size: clamp(30px, 8.4vw, 36px); }
+  .active-project h2 {
+    font-size: clamp(29px, 8vw, 34px);
+    line-height: 1.14;
+  }
   .active-project p { font-size: 15px; }
   .immersive-detail .detail-header { padding: 0; }
 }
