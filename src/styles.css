@@ -859,8 +859,8 @@ a { color: inherit; }
   font-family: var(--font-syne), sans-serif;
   font-size: clamp(38px, 4.8vw, 74px);
   font-weight: 520;
-  line-height: .98;
-  letter-spacing: -.045em;
+  line-height: 1.12;
+  letter-spacing: -.035em;
   text-wrap: balance;
 }
 .crate-story-copy > p {
