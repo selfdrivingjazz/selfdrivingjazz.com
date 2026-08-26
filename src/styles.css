@@ -809,7 +809,6 @@ a { color: inherit; }
   position: relative;
   min-height: 700svh;
   isolation: isolate;
-  overflow: clip;
   color: #f1f1ed;
   background: #060606;
 }
@@ -846,12 +845,10 @@ a { color: inherit; }
   width: min(100%, 540px);
   container-type: inline-size;
   opacity: .2;
-  transform: translateY(24px);
-  transition: opacity 380ms ease, transform 480ms cubic-bezier(.22, 1, .36, 1);
+  transition: opacity 380ms ease;
 }
 .crate-story.is-active .crate-story-copy {
   opacity: 1;
-  transform: translateY(0);
 }
 .crate-story h1,
 .crate-story h2 {
