@@ -8,7 +8,7 @@ import { PROJECTS } from '../data/projects';
 
 const sectionCopy = [
   {
-    slug: 'cursed-ui',
+    slug: 'introverse',
     id: 'opening-track',
     eyebrow: '01 / opening track',
     title: 'A crate of things that learned to move.',
