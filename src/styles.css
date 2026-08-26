@@ -844,6 +844,7 @@ a { color: inherit; }
 }
 .crate-story-copy {
   width: min(100%, 540px);
+  container-type: inline-size;
   opacity: .2;
   transform: translateY(24px);
   transition: opacity 380ms ease, transform 480ms cubic-bezier(.22, 1, .36, 1);
@@ -857,9 +858,9 @@ a { color: inherit; }
   max-width: 620px;
   margin: 0;
   font-family: var(--font-syne), sans-serif;
-  font-size: clamp(38px, 4.8vw, 74px);
+  font-size: clamp(34px, min(10cqw, 8svh), 74px);
   font-weight: 520;
-  line-height: 1.12;
+  line-height: 1.08;
   letter-spacing: -.035em;
   text-wrap: balance;
 }
@@ -914,7 +915,7 @@ a { color: inherit; }
     background: #060606;
   }
   .crate-story h1,
-  .crate-story h2 { font-size: clamp(34px, 10vw, 58px); }
+  .crate-story h2 { font-size: clamp(34px, min(10cqw, 6.5svh), 58px); }
   .crate-story-copy > p {
     margin-top: 18px;
     font-size: 14px;
