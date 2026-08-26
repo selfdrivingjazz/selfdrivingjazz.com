@@ -11,4 +11,4 @@ if [[ -n "$(git status --porcelain)" ]]; then
   exit 1
 fi
 
-exec npx --yes vercel deploy --yes "$@"
+exec /home/jmill/sdj/infra/ops/bin/sdj selfdrivingjazz candidate --ref "$branch"
