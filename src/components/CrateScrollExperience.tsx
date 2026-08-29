@@ -88,6 +88,18 @@ export default function CrateScrollExperience() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--ambient-a', ambience[0]);
+    root.style.setProperty('--ambient-b', ambience[1]);
+    root.style.setProperty('--ambient-c', ambience[2]);
+    return () => {
+      root.style.removeProperty('--ambient-a');
+      root.style.removeProperty('--ambient-b');
+      root.style.removeProperty('--ambient-c');
+    };
+  }, [ambience]);
+
+  useEffect(() => {
     function updateFromScroll() {
       frameRef.current = null;
       let nextIndex = 0;

@@ -27,6 +27,11 @@
   --header-height: 58px;
   --content-top: clamp(18px, 3.2vh, 30px);
   --section-gap: clamp(16px, 2.5vh, 24px);
+  --crate-gradient:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ambient-a) 42%, transparent), transparent 38rem),
+    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--ambient-b) 34%, transparent), transparent 44rem),
+    radial-gradient(circle at 48% 96%, color-mix(in srgb, var(--ambient-c) 26%, transparent), transparent 40rem),
+    linear-gradient(155deg, #080d0c 0%, #060606 48%, #10090d 100%);
 }
 
 * { box-sizing: border-box; }
@@ -904,7 +909,9 @@ a { color: inherit; }
   z-index: 60;
   margin: 0;
   padding-inline: max(var(--page-pad), calc((100vw - 1440px) / 2 + var(--page-pad)));
-  background: transparent;
+  background: var(--crate-gradient);
+  background-attachment: fixed;
+  background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
 }
 .crate-prototype {
   position: relative;
@@ -995,8 +1002,19 @@ a { color: inherit; }
     width: 100%;
     height: calc(48svh + var(--header-height) + 32px);
   }
+  .crate-visual-panel::before {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    content: "";
+    pointer-events: none;
+    background: var(--crate-gradient);
+    background-attachment: fixed;
+    background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
+  }
   .crate-visual-panel .record-crate-stage {
     top: calc(var(--header-height) + 32px);
+    z-index: 1;
   }
   .crate-copy-track { width: 100%; }
   .crate-story {
@@ -1006,6 +1024,9 @@ a { color: inherit; }
   }
   .crate-story-copy {
     width: 100%;
+    background: var(--crate-gradient);
+    background-attachment: fixed;
+    background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
   }
   .crate-story h1,
   .crate-story h2 { font-size: clamp(34px, min(10cqw, 6.5svh), 58px); }
@@ -1087,17 +1108,12 @@ a { color: inherit; }
   from { opacity: .22; transform: translateY(2px); }
   to { opacity: .48; transform: translateY(0); }
 }
-
 .crate-ambient {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ambient-a) 42%, transparent), transparent 38rem),
-    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--ambient-b) 34%, transparent), transparent 44rem),
-    radial-gradient(circle at 48% 96%, color-mix(in srgb, var(--ambient-c) 26%, transparent), transparent 40rem),
-    linear-gradient(155deg, #080d0c 0%, #060606 48%, #10090d 100%);
+  background: var(--crate-gradient);
   background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
   transition: --ambient-a 720ms ease, --ambient-b 720ms ease, --ambient-c 720ms ease;
 }
