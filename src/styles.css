@@ -908,7 +908,7 @@ a { color: inherit; }
   z-index: 60;
   margin: 0;
   padding-inline: max(var(--page-pad), calc((100vw - 1440px) / 2 + var(--page-pad)));
-  background: linear-gradient(180deg, rgba(6, 6, 6, .98), rgba(6, 6, 6, .76) 72%, transparent);
+  background: transparent;
 }
 .crate-prototype {
   position: relative;
