@@ -994,7 +994,6 @@ a { color: inherit; }
     bottom: auto;
     width: 100%;
     height: calc(48svh + var(--header-height) + 32px);
-    background: #060606;
   }
   .crate-visual-panel .record-crate-stage {
     top: calc(var(--header-height) + 32px);
@@ -1007,7 +1006,6 @@ a { color: inherit; }
   }
   .crate-story-copy {
     width: 100%;
-    background: #060606;
   }
   .crate-story h1,
   .crate-story h2 { font-size: clamp(34px, min(10cqw, 6.5svh), 58px); }
