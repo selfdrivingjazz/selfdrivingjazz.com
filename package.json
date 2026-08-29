@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
     "start": "next start"
   },
   "dependencies": {
@@ -14,5 +15,12 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/three": "^0.185.4",
+    "typescript": "^7.0.2"
   }
 }
