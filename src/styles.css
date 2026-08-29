@@ -1093,3 +1093,21 @@ a { color: inherit; }
   from { opacity: .22; transform: translateY(2px); }
   to { opacity: .48; transform: translateY(0); }
 }
+
+.crate-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ambient-a) 42%, transparent), transparent 38rem),
+    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--ambient-b) 34%, transparent), transparent 44rem),
+    radial-gradient(circle at 48% 96%, color-mix(in srgb, var(--ambient-c) 26%, transparent), transparent 40rem),
+    linear-gradient(155deg, #080d0c 0%, #060606 48%, #10090d 100%);
+  background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
+  transition: --ambient-a 720ms ease, --ambient-b 720ms ease, --ambient-c 720ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crate-ambient { transition: none; }
+}

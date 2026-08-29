@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import RecordCrate from '../RecordCrate';
+import { HOME_AMBIENCE } from '../data/homeProjects';
 import { PROJECTS } from '../data/projects';
 
 const sectionCopy = [
@@ -61,6 +63,12 @@ type CrateSection = (typeof sectionCopy)[number] & {
   project: (typeof PROJECTS)[number];
 };
 
+type AmbientStyle = CSSProperties & {
+  '--ambient-a': string;
+  '--ambient-b': string;
+  '--ambient-c': string;
+};
+
 const sections: CrateSection[] = sectionCopy.map((section) => {
   const project = PROJECTS.find(({ slug }) => slug === section.slug);
   if (!project) throw new Error(`Missing crate prototype project: ${section.slug}`);
@@ -72,6 +80,7 @@ export default function CrateScrollExperience() {
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const ambience = HOME_AMBIENCE[crateProjects[activeIndex].slug] ?? HOME_AMBIENCE['cursed-ui'];
 
   useEffect(() => {
     document.documentElement.classList.add('crate-scroll-active');
@@ -115,6 +124,15 @@ export default function CrateScrollExperience() {
 
   return (
     <main className="crate-prototype">
+      <div
+        className="crate-ambient"
+        style={{
+          '--ambient-a': ambience[0],
+          '--ambient-b': ambience[1],
+          '--ambient-c': ambience[2],
+        } as AmbientStyle}
+        aria-hidden="true"
+      />
       <div className="crate-visual-panel">
         <RecordCrate
           projects={crateProjects}
