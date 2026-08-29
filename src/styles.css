@@ -163,22 +163,6 @@ a { color: inherit; }
   filter: saturate(.86) contrast(1.06);
   transition: filter 240ms ease, transform 240ms ease;
 }
-.latest-release-stamp {
-  position: absolute;
-  top: 0;
-  left: 0;
-  padding: 11px 18px 10px;
-  border: 1px solid #111;
-  border-top: 0;
-  border-radius: 0 0 14px 0;
-  color: #111;
-  background: var(--release-accent);
-  font-family: var(--font-recursive), sans-serif;
-  font-variation-settings: "CASL" .28, "MONO" .08;
-  font-weight: 700;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-}
 .latest-release-copy {
   display: flex;
   min-width: 0;

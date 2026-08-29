@@ -7,9 +7,6 @@ import type { CSSProperties } from 'react';
 import { HOME_AMBIENCE } from '../data/homeProjects';
 import { PROJECTS, type Project } from '../data/projects';
 
-type ReleaseStyle = CSSProperties & {
-  '--release-accent': string;
-};
 
 interface HomeExperienceProps {
   scrollAmbience?: boolean;
@@ -19,9 +16,6 @@ function releaseNumber(index: number) {
   return String(PROJECTS.length - index).padStart(3, '0');
 }
 
-function releaseAccent(project: Project) {
-  return HOME_AMBIENCE[project.slug]?.[0] ?? '#db5b36';
-}
 function mixHex(left: string, right: string, amount: number): string {
   const leftRgb = left.match(/[a-f\d]{2}/gi)?.map((part) => Number.parseInt(part, 16)) ?? [8, 8, 8];
   const rightRgb = right.match(/[a-f\d]{2}/gi)?.map((part) => Number.parseInt(part, 16)) ?? leftRgb;
@@ -87,7 +81,6 @@ export default function HomeExperience({ scrollAmbience = false }: HomeExperienc
         <Link
           className="latest-release-link"
           href={`/projects/${latest.slug}`}
-          style={{ '--release-accent': releaseAccent(latest) } as ReleaseStyle}
         >
           <div className="latest-release-art">
             <Image
@@ -98,7 +91,6 @@ export default function HomeExperience({ scrollAmbience = false }: HomeExperienc
               priority
               alt={latest.coverAlt}
             />
-            <span className="latest-release-stamp">new release</span>
           </div>
           <div className="latest-release-copy">
             <div className="release-kicker">
@@ -120,7 +112,6 @@ export default function HomeExperience({ scrollAmbience = false }: HomeExperienc
               <Link
                 className="catalog-release"
                 href={`/projects/${project.slug}`}
-                style={{ '--release-accent': releaseAccent(project) } as ReleaseStyle}
               >
                 <span className="catalog-art"><Image src={project.coverUrl} width={420} height={420} sizes="120px" alt="" /></span>
                 <span className="catalog-copy">
