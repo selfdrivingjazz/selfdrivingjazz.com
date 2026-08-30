@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
 
+import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Project } from '../data/projects';
+import type { Project } from '../data/content-types';
 
 interface ProjectDetailExperienceProps {
   project: Project;
@@ -13,7 +14,7 @@ interface ProjectDetailExperienceProps {
 type DetailStyle = CSSProperties & { '--detail-art': string };
 
 
-export default function ProjectDetailExperience({ project, projectNumber, projectCount }: ProjectDetailExperienceProps) {
+export default async function ProjectDetailExperience({ project, projectNumber, projectCount }: ProjectDetailExperienceProps) {
   const closeDestination = '/';
 
   return (
@@ -92,7 +93,7 @@ export default function ProjectDetailExperience({ project, projectNumber, projec
             <div><dt>with</dt><dd>{project.collaborators}</dd></div>
           </dl>
           <div className="project-writeup">
-            {project.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            <MDXRemote source={project.content ?? ''} />
           </div>
         </div>
       </article>

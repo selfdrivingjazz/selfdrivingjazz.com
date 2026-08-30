@@ -28,9 +28,9 @@
   --content-top: clamp(18px, 3.2vh, 30px);
   --section-gap: clamp(16px, 2.5vh, 24px);
   --crate-gradient:
-    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ambient-a) 42%, transparent), transparent 38rem),
-    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--ambient-b) 34%, transparent), transparent 44rem),
-    radial-gradient(circle at 48% 96%, color-mix(in srgb, var(--ambient-c) 26%, transparent), transparent 40rem),
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--ambient-a) 14%, transparent), transparent 38rem),
+    radial-gradient(circle at 90% 28%, color-mix(in srgb, var(--ambient-b) 11%, transparent), transparent 44rem),
+    radial-gradient(circle at 48% 96%, color-mix(in srgb, var(--ambient-c) 8%, transparent), transparent 40rem),
     linear-gradient(155deg, #080d0c 0%, #060606 48%, #10090d 100%);
 }
 
@@ -912,6 +912,7 @@ a { color: inherit; }
   background: var(--crate-gradient);
   background-attachment: fixed;
   background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
+  transition: --ambient-a 1800ms ease-in-out, --ambient-b 1800ms ease-in-out, --ambient-c 1800ms ease-in-out;
 }
 .crate-prototype {
   position: relative;
@@ -1011,6 +1012,7 @@ a { color: inherit; }
     background: var(--crate-gradient);
     background-attachment: fixed;
     background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
+    transition: --ambient-a 1800ms ease-in-out, --ambient-b 1800ms ease-in-out, --ambient-c 1800ms ease-in-out;
   }
   .crate-visual-panel .record-crate-stage {
     top: calc(var(--header-height) + 32px);
@@ -1027,6 +1029,7 @@ a { color: inherit; }
     background: var(--crate-gradient);
     background-attachment: fixed;
     background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
+    transition: --ambient-a 1800ms ease-in-out, --ambient-b 1800ms ease-in-out, --ambient-c 1800ms ease-in-out;
   }
   .crate-story h1,
   .crate-story h2 { font-size: clamp(34px, min(10cqw, 6.5svh), 58px); }
@@ -1115,7 +1118,7 @@ a { color: inherit; }
   pointer-events: none;
   background: var(--crate-gradient);
   background-size: 120% 120%, 125% 125%, 120% 120%, 100% 100%;
-  transition: --ambient-a 720ms ease, --ambient-b 720ms ease, --ambient-c 720ms ease;
+  transition: --ambient-a 1800ms ease-in-out, --ambient-b 1800ms ease-in-out, --ambient-c 1800ms ease-in-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

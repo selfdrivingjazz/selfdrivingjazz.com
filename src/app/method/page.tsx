@@ -1,5 +1,6 @@
 import CrateScrollExperience from '../../components/CrateScrollExperience';
 import SiteShell from '../../components/SiteShell';
+import { getMethodSections, getProjects } from '../../lib/content';
 import { pageMetadata } from '../../lib/metadata';
 
 export const metadata = pageMetadata({
@@ -10,9 +11,11 @@ export const metadata = pageMetadata({
 });
 
 export default function MethodPage() {
+  const projects = getProjects();
+  const sections = getMethodSections();
   return (
     <SiteShell className="crate-page">
-      <CrateScrollExperience />
+      <CrateScrollExperience sections={sections} projects={projects} />
     </SiteShell>
   );
 }

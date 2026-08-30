@@ -1,5 +1,6 @@
 import HomeExperience from '../../components/HomeExperience';
 import SiteShell from '../../components/SiteShell';
+import { getProjects } from '../../lib/content';
 import { pageMetadata } from '../../lib/metadata';
 
 export const metadata = pageMetadata({
@@ -8,9 +9,10 @@ export const metadata = pageMetadata({
 });
 
 export default function ProjectsPage() {
+  const projects = getProjects();
   return (
     <SiteShell className="projects-page">
-      <HomeExperience scrollAmbience />
+      <HomeExperience projects={projects} scrollAmbience />
     </SiteShell>
   );
 }

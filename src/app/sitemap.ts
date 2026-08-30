@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next';
 
-import { PROJECTS } from '../data/projects';
+import { getProjects } from '../lib/content';
 import { SITE_URL } from '../lib/metadata';
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const projects = getProjects();
   const pages: Array<{
     path: string;
     priority: number;
@@ -14,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/about', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/method', priority: 0.8, changeFrequency: 'monthly' },
     { path: '/machine', priority: 0.6, changeFrequency: 'weekly' },
-    ...PROJECTS.map((project) => ({
+    ...projects.map((project) => ({
       path: `/projects/${project.slug}`,
       priority: 0.8,
       changeFrequency: 'monthly' as const,

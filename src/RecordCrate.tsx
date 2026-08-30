@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import RecordCrateFallback from './RecordCrateFallback';
-import type { Project } from './data/projects';
+import type { Project } from './data/content-types';
 
 type Vector3Tuple = [number, number, number];
 

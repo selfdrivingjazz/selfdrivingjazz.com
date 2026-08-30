@@ -3,17 +3,15 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
-import { HOME_AMBIENCE } from '../data/homeProjects';
-import { PROJECTS, type Project } from '../data/projects';
-
+import type { Project } from '../data/content-types';
 
 interface HomeExperienceProps {
+  projects: Project[];
   scrollAmbience?: boolean;
 }
 
-function releaseNumber(index: number) {
-  return String(PROJECTS.length - index).padStart(3, '0');
+function releaseNumber(projects: Project[], index: number) {
+  return String(projects.length - index).padStart(3, '0');
 }
 
 function mixHex(left: string, right: string, amount: number): string {
@@ -23,10 +21,10 @@ function mixHex(left: string, right: string, amount: number): string {
 }
 
 function ambienceFor(project: Project): readonly [string, string, string] {
-  return HOME_AMBIENCE[project.slug] ?? HOME_AMBIENCE['cursed-ui'];
+  return project.ambience ?? ['#319a83', '#703f4c', '#956e66'];
 }
 
-function useScrollAmbience(enabled: boolean) {
+function useScrollAmbience(projects: Project[], enabled: boolean) {
   useEffect(() => {
     if (!enabled) return undefined;
 
@@ -37,12 +35,12 @@ function useScrollAmbience(enabled: boolean) {
       frame = 0;
       const scrollableHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       const progress = Math.min(1, Math.max(0, window.scrollY / scrollableHeight));
-      const position = progress * (PROJECTS.length - 1);
+      const position = progress * (projects.length - 1);
       const leftIndex = Math.floor(position);
-      const rightIndex = Math.min(PROJECTS.length - 1, leftIndex + 1);
+      const rightIndex = Math.min(projects.length - 1, leftIndex + 1);
       const amount = position - leftIndex;
-      const left = ambienceFor(PROJECTS[leftIndex]);
-      const right = ambienceFor(PROJECTS[rightIndex]);
+      const left = ambienceFor(projects[leftIndex]);
+      const right = ambienceFor(projects[rightIndex]);
 
       root.style.setProperty('--ambient-a', mixHex(left[0], right[0], amount));
       root.style.setProperty('--ambient-b', mixHex(left[1], right[1], amount));
@@ -65,23 +63,19 @@ function useScrollAmbience(enabled: boolean) {
       root.style.removeProperty('--ambient-b');
       root.style.removeProperty('--ambient-c');
     };
-  }, [enabled]);
+  }, [enabled, projects]);
 }
 
-
-export default function HomeExperience({ scrollAmbience = false }: HomeExperienceProps) {
-  useScrollAmbience(scrollAmbience);
-  const latest = PROJECTS[0];
-  const backlog = PROJECTS.slice(1);
+export default function HomeExperience({ projects, scrollAmbience = false }: HomeExperienceProps) {
+  useScrollAmbience(projects, scrollAmbience);
+  const latest = projects[0];
+  const backlog = projects.slice(1);
 
   return (
     <main className="shell-main home-main">
       <section className="latest-release" aria-labelledby="latest-release-title">
-        <ReleaseRule label="" detail={`sdj—${releaseNumber(0)} / ${latest.year}`} />
-        <Link
-          className="latest-release-link"
-          href={`/projects/${latest.slug}`}
-        >
+        <ReleaseRule label="" detail={`sdj—${releaseNumber(projects, 0)} / ${latest.year}`} />
+        <Link className="latest-release-link" href={`/projects/${latest.slug}`}>
           <div className="latest-release-art">
             <Image
               src={latest.coverUrl}
@@ -109,13 +103,10 @@ export default function HomeExperience({ scrollAmbience = false }: HomeExperienc
         <ol className="back-catalog-list" id="back-catalog-title">
           {backlog.map((project, index) => (
             <li key={project.slug}>
-              <Link
-                className="catalog-release"
-                href={`/projects/${project.slug}`}
-              >
+              <Link className="catalog-release" href={`/projects/${project.slug}`}>
                 <span className="catalog-art"><Image src={project.coverUrl} width={420} height={420} sizes="120px" alt="" /></span>
                 <span className="catalog-copy">
-                  <span className="catalog-meta"><span className="catalog-number">sdj—{releaseNumber(index + 1)}</span><span aria-hidden="true">/</span>{project.year} / {project.format}</span>
+                  <span className="catalog-meta"><span className="catalog-number">sdj—{releaseNumber(projects, index + 1)}</span><span aria-hidden="true">/</span>{project.year}</span>
                   <span className="catalog-title">{project.title}</span>
                   <span className="catalog-summary">{project.summary}</span>
                 </span>
@@ -125,7 +116,6 @@ export default function HomeExperience({ scrollAmbience = false }: HomeExperienc
           ))}
         </ol>
       </section>
-
     </main>
   );
 }

@@ -1,15 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ImageResponse } from 'next/og';
-import { PROJECTS } from '../../../data/projects';
+import { getProjects } from '../../../lib/content';
 import { DEFAULT_DESCRIPTION, SITE_NAME } from '../../../lib/metadata';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
+  const projects = getProjects();
   const url = new URL(request.url);
-  const projectIndex = PROJECTS.findIndex((project) => project.slug === url.searchParams.get('project'));
-  const project = PROJECTS[projectIndex];
+  const projectIndex = projects.findIndex((project) => project.slug === url.searchParams.get('project'));
+  const project = projects[projectIndex];
   const artworkPath = project?.ogCover ?? '/sdj-logo.png';
   const artwork = await readFile(path.join(process.cwd(), 'public', artworkPath.slice(1)));
   const artworkType = artworkPath.endsWith('.png') ? 'image/png' : 'image/jpeg';
@@ -47,7 +48,7 @@ export async function GET(request: Request) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {project && (
               <div style={{ color: '#8d8d89', fontSize: '18px', letterSpacing: '2px' }}>
-                {`project ${String(PROJECTS.length - projectIndex).padStart(3, '0')}`}
+                {`project ${String(projects.length - projectIndex).padStart(3, '0')}`}
               </div>
             )}
             {project && (

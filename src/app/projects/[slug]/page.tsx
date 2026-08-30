@@ -4,13 +4,12 @@ import { notFound } from 'next/navigation';
 import ProjectDetailExperience from '../../../components/ProjectDetailExperience';
 import JsonLd from '../../../components/JsonLd';
 import SiteShell from '../../../components/SiteShell';
-import { PROJECTS, getProject } from '../../../data/projects';
+import { getProject, getProjects } from '../../../lib/content';
 import { SITE_NAME, SITE_URL, pageMetadata } from '../../../lib/metadata';
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
 }
-
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -27,9 +26,10 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const projectIndex = PROJECTS.findIndex((project) => project.slug === slug);
-  if (projectIndex < 0) notFound();
-  const project = PROJECTS[projectIndex];
+  const projects = getProjects();
+  const project = getProject(slug);
+  if (!project) notFound();
+  const projectIndex = projects.findIndex((candidate) => candidate.slug === project.slug);
 
   const projectUrl = `${SITE_URL}/projects/${project.slug}`;
   const imageUrl = project.coverUrl.startsWith('http')
@@ -58,8 +58,8 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       <JsonLd data={projectData} />
       <ProjectDetailExperience
         project={project}
-        projectNumber={PROJECTS.length - projectIndex}
-        projectCount={PROJECTS.length}
+        projectNumber={projects.length - projectIndex}
+        projectCount={projects.length}
       />
     </SiteShell>
   );

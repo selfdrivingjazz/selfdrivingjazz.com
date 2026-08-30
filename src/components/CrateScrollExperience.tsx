@@ -4,64 +4,12 @@ import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import RecordCrate from '../RecordCrate';
-import { HOME_AMBIENCE } from '../data/homeProjects';
-import { PROJECTS } from '../data/projects';
+import type { MethodSection, Project } from '../data/content-types';
 
-const sectionCopy = [
-  {
-    slug: 'introverse',
-    id: 'opening-track',
-    title: 'A crate of things that learned to move.',
-    copy: 'Self-Driving Jazz is a label for projects with their own momentum: software, games, gatherings, agents, and half-serious instruments.',
-    detail: 'Each sleeve is another way into the catalog. Scroll one page at a time and the crate will turn up the next project.',
-  },
-  {
-    slug: 'spaghettify',
-    id: 'tools',
-    title: 'Tools should leave fingerprints.',
-    copy: 'Some software exists to remove friction. These records keep a little grit in the mechanism.',
-    detail: 'They turn familiar interfaces sideways and make the person using them part of the composition.',
-  },
-  {
-    slug: 'whalechess',
-    id: 'worlds',
-    title: 'Rules first. Then mutation.',
-    copy: 'A board, a protocol, a tiny fictional economy. The interesting part begins when a known game grows an impossible piece.',
-    detail: 'The new piece asks everyone to renegotiate the rules together.',
-  },
-  {
-    slug: 'bombay-beachy-yami-ichi',
-    id: 'gatherings',
-    title: 'The internet needs folding tables.',
-    copy: 'Not every network wants to be an app. Sometimes it wants a dusty market, a handmade object, or a temporary town.',
-    detail: 'Sometimes it is just an excuse to meet the person hiding behind the username.',
-  },
-  {
-    slug: 'bella-coven',
-    id: 'agents',
-    title: 'Let the machine into the ensemble.',
-    copy: 'The agent is not the product manager. It is another player listening for an opening.',
-    detail: 'Occasionally useful, occasionally uncanny, and best when the room can answer back.',
-  },
-  {
-    slug: 'mulabonding',
-    id: 'collective-work',
-    title: 'Authorship can be a multiplayer instrument.',
-    copy: 'Thirty people, five house spirits, one book. The catalog keeps returning to the same question.',
-    detail: 'What can a group make when the process is legible enough for everyone to improvise?',
-  },
-  {
-    slug: 'viperbot',
-    id: 'signal',
-    title: 'The next record is already in the crate.',
-    copy: 'This is not a retrospective so much as a listening station.',
-    detail: 'Follow a sleeve, borrow a motif, or leave the needle hovering. Another project is already entering the stack.',
-  },
-] as const;
-
-type CrateSection = (typeof sectionCopy)[number] & {
-  project: (typeof PROJECTS)[number];
-};
+interface CrateScrollExperienceProps {
+  sections: MethodSection[];
+  projects: Project[];
+}
 
 type AmbientStyle = CSSProperties & {
   '--ambient-a': string;
@@ -69,18 +17,16 @@ type AmbientStyle = CSSProperties & {
   '--ambient-c': string;
 };
 
-const sections: CrateSection[] = sectionCopy.map((section) => {
-  const project = PROJECTS.find(({ slug }) => slug === section.slug);
-  if (!project) throw new Error(`Missing crate prototype project: ${section.slug}`);
-  return { ...section, project };
-});
-const crateProjects = sections.map(({ project }) => project);
-
-export default function CrateScrollExperience() {
+export default function CrateScrollExperience({ sections, projects }: CrateScrollExperienceProps) {
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const ambience = HOME_AMBIENCE[crateProjects[activeIndex].slug] ?? HOME_AMBIENCE['cursed-ui'];
+  const crateProjects = sections.map((section) => {
+    const project = projects.find(({ slug }) => slug === section.projectSlug);
+    if (!project) throw new Error(`Missing method project: ${section.projectSlug}`);
+    return project;
+  });
+  const ambience = crateProjects[activeIndex].ambience ?? ['#319a83', '#703f4c', '#956e66'];
 
   useEffect(() => {
     document.documentElement.classList.add('crate-scroll-active');
@@ -156,6 +102,7 @@ export default function CrateScrollExperience() {
       <div className="crate-copy-track">
         {sections.map((section, index) => {
           const Heading = index === 0 ? 'h1' : 'h2';
+          const project = crateProjects[index];
           return (
             <section
               key={section.id}
@@ -168,8 +115,8 @@ export default function CrateScrollExperience() {
                 <Heading id={`${section.id}-title`}>{section.title}</Heading>
                 <p>{section.copy}</p>
                 <p>{section.detail}</p>
-                <Link href={`/projects/${section.project.slug}`}>
-                  open {section.project.title} <span aria-hidden="true">↗</span>
+                <Link href={`/projects/${project.slug}`}>
+                  open {project.title} <span aria-hidden="true">↗</span>
                 </Link>
               </div>
             </section>

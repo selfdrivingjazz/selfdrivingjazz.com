@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { PROJECTS, type Project } from '../data/projects';
+import type { Project } from '../data/content-types';
 
-export default function ProjectList({ projects = PROJECTS }: { projects?: Project[] }) {
+export default function ProjectList({ projects }: { projects: Project[] }) {
   return (
     <ol className="project-list">
       {projects.map((project, index) => (
