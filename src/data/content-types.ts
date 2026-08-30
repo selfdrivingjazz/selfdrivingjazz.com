@@ -1,4 +1,5 @@
 export interface Project {
+  order: number;
   slug: string;
   title: string;
   summary: string;

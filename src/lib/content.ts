@@ -29,7 +29,9 @@ function readProject(filename: string, includeContent: boolean): Project {
 }
 
 export function getProjects(): Project[] {
-  return contentFiles(PROJECTS_ROOT).map((filename) => readProject(filename, false));
+  return contentFiles(PROJECTS_ROOT)
+    .map((filename) => readProject(filename, false))
+    .sort((left, right) => left.order - right.order);
 }
 
 export function getProject(slug: string): Project | undefined {
