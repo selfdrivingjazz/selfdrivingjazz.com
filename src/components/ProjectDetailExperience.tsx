@@ -46,10 +46,6 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
               front={{ src: project.coverUrl, alt: project.coverAlt }}
               back={project.backCoverUrl ? { src: project.backCoverUrl, alt: project.backCoverAlt ?? `${project.title} back cover` } : undefined}
               title={project.title}
-              label={label}
-              year={project.year}
-              collaborators={project.collaborators}
-              summary={project.summary}
               placeholder={project.placeholder}
             />
           </div>
