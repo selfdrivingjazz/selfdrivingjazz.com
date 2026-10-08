@@ -5,8 +5,8 @@ import { pageMetadata } from '../lib/metadata';
 
 export const metadata = pageMetadata({ path: '/' });
 
-export default function HomePage() {
-  const projects = getProjects();
+export default async function HomePage() {
+  const projects = await getProjects();
   return (
     <SiteShell className="crate-page">
       <CrateScrollExperience projects={projects} />

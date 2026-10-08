@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import RecordCrate, { type CrateRecord } from '../RecordCrate';
 import type { Project } from '../data/content-types';
 import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
+import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
 import AmbientField, { type Ambience, DEFAULT_AMBIENCE } from './AmbientField';
@@ -49,7 +50,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
       cta: 'view project',
       ambience: project.ambience ?? DEFAULT_AMBIENCE,
     }));
-    const recordList: CrateRecord[] = featured.map((project) => ({ cover: project.recordCover }));
+    const recordList: CrateRecord[] = featured.map((project) => ({ cover: optimizedImageUrl(project.recordCover, 828) }));
     if (older.length > 0) {
       const range = `${labelCode(projects.length, projects.length - 1)} – ${labelCode(projects.length, CRATE_RELEASES)}`;
       storyList.push({
@@ -61,7 +62,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
         cta: 'browse the catalogue',
         ambience: DEFAULT_AMBIENCE,
       });
-      recordList.push({ collage: older.map((project) => project.coverUrl), title: 'older works', label: range });
+      recordList.push({ collage: older.map((project) => optimizedImageUrl(project.coverUrl, 384)), title: 'older works', label: range });
     }
     return { stories: storyList, records: recordList };
   }, [projects]);

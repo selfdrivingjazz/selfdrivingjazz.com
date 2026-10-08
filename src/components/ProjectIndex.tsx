@@ -65,7 +65,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
         ref={(node) => { releaseRefs.current[0] = node; }}
       >
         <Link className="index-hero-link" href={`/projects/${latest.slug}`} {...hoverHandlers(0)}>
-          <div className="index-hero-art">
+          <div className="index-hero-art" style={{ background: latest.placeholder }}>
             <Image
               src={latest.coverUrl}
               width={1200}
@@ -103,7 +103,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
             return (
               <li key={project.slug} ref={(node) => { releaseRefs.current[index] = node; }}>
                 <Link className="record-tile" href={`/projects/${project.slug}`} {...hoverHandlers(index)}>
-                  <span className="record-tile-art">
+                  <span className="record-tile-art" style={{ background: project.placeholder }}>
                     <Image src={project.coverUrl} width={600} height={600} sizes="(min-width: 1100px) 280px, (min-width: 700px) 30vw, 46vw" alt="" />
                   </span>
                   <span className="record-tile-meta">

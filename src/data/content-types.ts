@@ -15,5 +15,7 @@ export interface Project {
   backCoverAlt?: string;
   outboundUrl: string | null;
   ambience: readonly [string, string, string] | null;
+  /** CSS background approximating the cover's colours, shown until the image loads. */
+  placeholder: string;
   content?: string;
 }

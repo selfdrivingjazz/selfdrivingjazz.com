@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   allowedDevOrigins: ['jmill-desktop.tail587341.ts.net'],
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

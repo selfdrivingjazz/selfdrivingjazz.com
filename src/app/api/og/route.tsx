@@ -8,7 +8,7 @@ import { DEFAULT_DESCRIPTION, SITE_NAME } from '../../../lib/metadata';
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  const projects = getProjects();
+  const projects = await getProjects();
   const url = new URL(request.url);
   const projectIndex = projects.findIndex((project) => project.slug === url.searchParams.get('project'));
   const project = projects[projectIndex];

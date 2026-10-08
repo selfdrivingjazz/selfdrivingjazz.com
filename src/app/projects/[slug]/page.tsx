@@ -13,7 +13,7 @@ interface ProjectPageProps {
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProject(slug);
+  const project = await getProject(slug);
   if (!project) return pageMetadata({ path: '/projects' });
   return pageMetadata({
     path: `/projects/${project.slug}`,
@@ -26,8 +26,8 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const projects = getProjects();
-  const project = getProject(slug);
+  const projects = await getProjects();
+  const project = await getProject(slug);
   if (!project) notFound();
   const projectIndex = projects.findIndex((candidate) => candidate.slug === project.slug);
 

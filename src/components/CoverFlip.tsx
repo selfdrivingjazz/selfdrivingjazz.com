@@ -12,10 +12,12 @@ interface CoverFlipProps {
   year: string;
   collaborators: string;
   summary: string;
+  /** CSS background shown until the cover image loads. */
+  placeholder: string;
 }
 
 /** Record sleeve that turns over to its back cover when clicked. */
-export default function CoverFlip({ front, back, title, label, year, collaborators, summary }: CoverFlipProps) {
+export default function CoverFlip({ front, back, title, label, year, collaborators, summary, placeholder }: CoverFlipProps) {
   const [flipped, setFlipped] = useState(false);
 
   return (
@@ -27,7 +29,7 @@ export default function CoverFlip({ front, back, title, label, year, collaborato
       onClick={() => setFlipped((value) => !value)}
     >
       <span className="cover-flip-inner">
-        <span className="cover-face cover-front">
+        <span className="cover-face cover-front" style={{ background: placeholder }}>
           <Image src={front.src} width={1600} height={1600} sizes="(min-width: 900px) 600px, 100vw" alt={front.alt} priority />
         </span>
         <span className="cover-face cover-back" aria-hidden={!flipped}>

@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 import { getProjects } from '../lib/content';
 import { SITE_URL } from '../lib/metadata';
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const projects = getProjects();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const projects = await getProjects();
   const pages: Array<{
     path: string;
     priority: number;

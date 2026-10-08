@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Project } from '../data/content-types';
 import { crateHref } from '../lib/crate';
+import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
 import CoverFlip from './CoverFlip';
@@ -25,9 +26,9 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
   return (
     <main
       className="shell-main detail-main immersive-detail"
-      style={{ '--detail-art': `url("${project.coverUrl}")` } as DetailStyle}
+      style={{ '--detail-art': `url("${optimizedImageUrl(project.coverUrl, 384)}")` } as DetailStyle}
     >
-      <div className="detail-art-backdrop" aria-hidden="true" />
+      <div className="detail-art-backdrop" style={{ background: project.placeholder }} aria-hidden="true" />
       <div className="detail-art-scrim" aria-hidden="true" />
 
       <article className="project-detail">
@@ -49,6 +50,7 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
               year={project.year}
               collaborators={project.collaborators}
               summary={project.summary}
+              placeholder={project.placeholder}
             />
           </div>
 
@@ -79,7 +81,7 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
               { neighbour: older, label: 'older', offset: 1 },
             ].map(({ neighbour, label: direction, offset }) => neighbour && (
               <Link key={direction} className={`neighbour neighbour-${direction}`} href={`/projects/${neighbour.slug}`}>
-                <span className="neighbour-art">
+                <span className="neighbour-art" style={{ background: neighbour.placeholder }}>
                   <Image src={neighbour.coverUrl} width={240} height={240} sizes="72px" alt="" />
                 </span>
                 <span className="neighbour-copy">

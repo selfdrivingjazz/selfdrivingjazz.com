@@ -8,8 +8,8 @@ export const metadata = pageMetadata({
   description: 'Projects and experiments in recursive media from self-driving jazz.',
 });
 
-export default function ProjectsPage() {
-  const projects = getProjects();
+export default async function ProjectsPage() {
+  const projects = await getProjects();
   return (
     <SiteShell className="projects-page">
       <ProjectIndex projects={projects} />

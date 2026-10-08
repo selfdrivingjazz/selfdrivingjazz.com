@@ -48,7 +48,7 @@ const POST_X = 1.68;
 const POST_Z = (CRATE_DEPTH - POST_SIZE) / 2;
 const POST_HEIGHT = 1.32;
 const SLEEVE_SIZE = 2.78;
-const SLEEVE_DEPTH = 0.036;
+const SLEEVE_DEPTH = 0.026;
 const RECORD_SPACING = 0.11;
 const BASE_TOP = 0.08;
 const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
@@ -217,10 +217,8 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
     const textures: THREE.Texture[] = [];
     const crateMaterial = new THREE.MeshStandardMaterial({ color: 0x202321, roughness: 0.86, metalness: 0.08 });
     const crateEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x353a37, roughness: 0.78, metalness: 0.12 });
-    const sleeveEdgeMaterial = new THREE.MeshStandardMaterial({ color: 0x101211, roughness: 0.72, metalness: 0.06 });
     materials.add(crateMaterial);
     materials.add(crateEdgeMaterial);
-    materials.add(sleeveEdgeMaterial);
 
     const crate = new THREE.Group();
     crate.rotation.y = FRONT_CRATE_ROTATION;
@@ -293,6 +291,23 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
       });
     };
     const textureLoader = new THREE.TextureLoader(loadingManager);
+    // One sleeve geometry for all records. Its edge faces sample the outermost strip of the cover,
+    // so a sleeve's spine reads as the cover's own border colours rather than a flat dark band.
+    const sleeveGeometry = new THREE.BoxGeometry(SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH);
+    geometries.push(sleeveGeometry);
+    const uv = sleeveGeometry.getAttribute('uv');
+    const EDGE_STRIP = 0.012;
+    // BoxGeometry faces, 4 vertices each: +x, -x, +y, -y, +z, -z.
+    for (let vertex = 0; vertex < 16; vertex += 1) {
+      const face = Math.floor(vertex / 4);
+      const u = uv.getX(vertex);
+      const v = uv.getY(vertex);
+      if (face === 0) uv.setXY(vertex, 1 - EDGE_STRIP + u * EDGE_STRIP, v); // right edge
+      if (face === 1) uv.setXY(vertex, u * EDGE_STRIP, v); // left edge
+      if (face === 2) uv.setXY(vertex, u, 1 - EDGE_STRIP + v * EDGE_STRIP); // top edge
+      if (face === 3) uv.setXY(vertex, u, v * EDGE_STRIP); // bottom edge
+    }
+    uv.needsUpdate = true;
     const records = crateRecords.map((record, index) => {
       let texture: THREE.Texture;
       if ('cover' in record) {
@@ -315,14 +330,19 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
         metalness: 0,
       });
       materials.add(coverMaterial);
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        map: texture,
+        color: 0x9a9a9a,
+        roughness: 0.95,
+        metalness: 0,
+      });
+      materials.add(edgeMaterial);
 
-      const geometry = new THREE.BoxGeometry(SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH);
-      geometries.push(geometry);
-      const mesh = new THREE.Mesh(geometry, [
-        sleeveEdgeMaterial,
-        sleeveEdgeMaterial,
-        sleeveEdgeMaterial,
-        sleeveEdgeMaterial,
+      const mesh = new THREE.Mesh(sleeveGeometry, [
+        edgeMaterial,
+        edgeMaterial,
+        edgeMaterial,
+        edgeMaterial,
         coverMaterial,
         coverMaterial,
       ]);
