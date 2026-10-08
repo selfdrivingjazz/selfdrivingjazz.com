@@ -37,8 +37,9 @@ npm run sync:vault
 ```
 
 `covers` runs `codex exec` with the built-in image tool (uses the ChatGPT plan
-Codex is signed in with) and the deliberately loose brief in
-`design/cover-direction.md`, then publishes the candidates to MTS Outputs.
+Codex is signed in with) and the brief in `design/cover-direction.md`: fixed
+house rules (1958–75 British–Swiss print modernism) plus a list of `### ` series;
+each candidate gets a different random series. It then publishes to MTS Outputs.
 `--with-references` also attaches `design/cover-references/`; it is off by
 default because the model copies attached covers too literally. `use-cover`
 copies the pick into the vault and updates the note.

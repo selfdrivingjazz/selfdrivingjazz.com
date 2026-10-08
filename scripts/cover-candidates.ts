@@ -22,6 +22,7 @@ const WRITEUP_LIMIT = 2000;
 
 interface Concept {
   file: string;
+  series?: string;
   concept: string;
   alt: string;
 }
@@ -69,10 +70,28 @@ function catalogMark(catalog: unknown): string {
   return `SDJ ${String(number).padStart(3, '0')}`;
 }
 
+/** The `### ` headings under `## Series` in the art direction. */
+function seriesNames(direction: string): string[] {
+  const section = direction.split(/^## /m).find((part) => part.startsWith('Series'));
+  return section ? [...section.matchAll(/^### (.+)$/gm)].map((match) => match[1].trim()) : [];
+}
+
+/** A random, non-repeating series per candidate so a run spans the catalogue's idioms. */
+function assignSeries(direction: string, count: number): string[] {
+  const names = seriesNames(direction);
+  for (let index = names.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [names[index], names[swap]] = [names[swap], names[index]];
+  }
+  return Array.from({ length: count }, (_, index) => names[index % Math.max(1, names.length)] ?? 'any series');
+}
+
 function buildPrompt(options: CoverRunOptions, references: string[]): string {
   const note = findNote(options.slug);
   const { data } = note;
+  const direction = fs.readFileSync(DIRECTION_PATH, 'utf8');
   const files = Array.from({ length: options.count }, (_, index) => `candidate-${index + 1}.png`);
+  const series = assignSeries(direction, options.count);
   return [
     '$imagegen',
     `Create ${options.count} distinct record-cover candidates for a Self-Driving Jazz project, following the art direction below.`,
@@ -80,7 +99,7 @@ function buildPrompt(options: CoverRunOptions, references: string[]): string {
       ? `The ${references.length} attached images are covers already in the catalogue. They show the level of taste expected, nothing more: do not reuse their layouts, palettes, type treatment or motifs.`
       : '',
     '',
-    fs.readFileSync(DIRECTION_PATH, 'utf8'),
+    direction,
     '## The project',
     `- Title (spelled exactly; case is your choice): "${note.title}"`,
     `- Catalogue mark (optional, tiny): "${catalogMark(data.catalog)}"`,
@@ -94,9 +113,10 @@ function buildPrompt(options: CoverRunOptions, references: string[]): string {
     options.direction ? `\n## Extra direction for this run\n${options.direction}` : '',
     '',
     '## Deliverables',
-    `1. For each candidate, first decide its one-sentence concept from what the project is, then generate it. The ${options.count} candidates must differ in concept, medium, palette, typography and composition. Take risks: at least one candidate should be unlike any typical record cover.`,
+    '1. For each candidate, first decide its one-sentence concept from what the project is, then generate it inside its assigned series:',
+    ...files.map((file, index) => `   - ${file}: ${series[index]}`),
     `2. Save the images in the current directory as ${files.join(', ')}.`,
-    '3. Write concepts.json in the current directory: a JSON array of {"file", "concept", "alt"} — concept is the one-sentence idea; alt is a plain description of the image for screen readers, at most 140 characters.',
+    '3. Write concepts.json in the current directory: a JSON array of {"file", "series", "concept", "alt"} — concept is the one-sentence idea; alt is a plain description of the image for screen readers, at most 140 characters.',
     'Do not create or modify any other files.',
   ].filter((line) => line !== '').join('\n');
 }
@@ -140,8 +160,9 @@ function main() {
     '--title', `Cover candidates — ${note.title}`,
     '--summary', `Pick one with: npm run use-cover -- ${options.slug} ${path.relative(ROOT, workDir)}/candidate-N.png`,
     ...images.flatMap((image) => {
-      const concept = concepts.find((entry) => entry.file === image)?.concept ?? image;
-      return ['--file', path.join(workDir, image), '--label', `${image}: ${concept}`.slice(0, 240)];
+      const entry = concepts.find((candidate) => candidate.file === image);
+      const label = entry ? `${entry.series ? `${entry.series} — ` : ''}${entry.concept}` : image;
+      return ['--file', path.join(workDir, image), '--label', `${image}: ${label}`.slice(0, 240)];
     }),
   ];
   const publish = spawnSync('python3', publishArgs, { stdio: ['ignore', 'pipe', 'inherit'], encoding: 'utf8' });
