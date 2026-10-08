@@ -58,8 +58,10 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       <JsonLd data={projectData} />
       <ProjectDetailExperience
         project={project}
-        projectNumber={projects.length - projectIndex}
+        projectIndex={projectIndex}
         projectCount={projects.length}
+        newer={projects[projectIndex - 1]}
+        older={projects[projectIndex + 1]}
       />
     </SiteShell>
   );

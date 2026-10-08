@@ -1,4 +1,4 @@
-import HomeExperience from '../../components/HomeExperience';
+import ProjectIndex from '../../components/ProjectIndex';
 import SiteShell from '../../components/SiteShell';
 import { getProjects } from '../../lib/content';
 import { pageMetadata } from '../../lib/metadata';
@@ -12,7 +12,7 @@ export default function ProjectsPage() {
   const projects = getProjects();
   return (
     <SiteShell className="projects-page">
-      <HomeExperience projects={projects} scrollAmbience />
+      <ProjectIndex projects={projects} />
     </SiteShell>
   );
 }

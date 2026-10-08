@@ -52,11 +52,9 @@ export default function Header() {
     ? 'home'
     : pathname.startsWith('/projects')
       ? 'projects'
-      : pathname.startsWith('/method')
-        ? 'method'
-        : pathname === '/about'
-          ? 'about'
-          : undefined;
+      : pathname === '/about'
+        ? 'about'
+        : undefined;
 
   return (
     <header className="header" ref={headerRef}>
@@ -76,7 +74,6 @@ export default function Header() {
       <nav id="site-menu" className={`site-menu${menuOpen ? ' is-open' : ''}`} aria-label="Site">
         <Link href="/" aria-current={activePage === 'home' ? 'page' : undefined}>home</Link>
         <Link href="/projects" aria-current={activePage === 'projects' ? 'page' : undefined}>projects</Link>
-        <Link href="/method" aria-current={activePage === 'method' ? 'page' : undefined}>method</Link>
         <Link href="/about" aria-current={activePage === 'about' ? 'page' : undefined}>about</Link>
       </nav>
     </header>

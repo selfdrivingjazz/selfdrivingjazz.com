@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ImageResponse } from 'next/og';
 import { getProjects } from '../../../lib/content';
+import { labelCode } from '../../../lib/labels';
 import { DEFAULT_DESCRIPTION, SITE_NAME } from '../../../lib/metadata';
 
 export const runtime = 'nodejs';
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {project && (
               <div style={{ color: '#8d8d89', fontSize: '18px', letterSpacing: '2px' }}>
-                {`project ${String(projects.length - projectIndex).padStart(3, '0')}`}
+                {labelCode(projects.length, projectIndex)}
               </div>
             )}
             {project && (

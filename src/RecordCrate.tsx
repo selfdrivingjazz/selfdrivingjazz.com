@@ -11,7 +11,22 @@ type Vector3Tuple = [number, number, number];
 interface RecordCrateProps {
   projects: Project[];
   activeIndex: number;
-  onAdvance: () => void;
+  /** Called when the front record is tapped/activated. */
+  onOpen: (index: number) => void;
+  /** Lift the record out of the crate toward the camera before calling `onOpen`. */
+  pullTransition?: boolean;
+}
+
+interface PullAnimation {
+  index: number;
+  mesh: THREE.Mesh;
+  start: number;
+  from: THREE.Vector3;
+  lift: THREE.Vector3;
+  to: THREE.Vector3;
+  fromRotation: THREE.Quaternion;
+  toRotation: THREE.Quaternion;
+  opened: boolean;
 }
 
 interface PointerGesture {
@@ -28,7 +43,9 @@ const POST_Z = (CRATE_DEPTH - POST_SIZE) / 2;
 const POST_HEIGHT = 1.32;
 const SLEEVE_SIZE = 2.78;
 const SLEEVE_DEPTH = 0.075;
-const RECORD_SPACING = 0.135;
+const MAX_RECORD_SPACING = 0.135;
+const RECORD_STACK_DEPTH = 1.5;
+const BACK_RECORD_LIMIT_Z = -1.41;
 const BASE_TOP = 0.08;
 const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
 const FRONT_RECORD_Z = -0.6;
@@ -39,16 +56,23 @@ const VIEW_DIRECTION = new THREE.Vector3(0, 0.62, 1.18).normalize();
 const FRONT_CRATE_ROTATION = -0.20;
 const ROTATION_PER_PIXEL = 0.008;
 const DRAG_THRESHOLD = 5;
+const PULL_DURATION_MS = 920;
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
 
 
-function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
+function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: RecordCrateProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const activeIndexRef = useRef(activeIndex);
-  const onAdvanceRef = useRef(onAdvance);
+  const onOpenRef = useRef(onOpen);
+  const pullTransitionRef = useRef(pullTransition);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   activeIndexRef.current = activeIndex;
-  onAdvanceRef.current = onAdvance;
+  onOpenRef.current = onOpen;
+  pullTransitionRef.current = pullTransition;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -86,7 +110,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
     activeRenderer.domElement.setAttribute('role', 'button');
     activeRenderer.domElement.setAttribute(
       'aria-label',
-      'Interactive three-dimensional crate of project records. Click to advance; drag to rotate.',
+      'Interactive three-dimensional crate of project records. Activate to open the front record; drag sideways to rotate.',
     );
     activeMount.append(activeRenderer.domElement);
 
@@ -189,8 +213,11 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
     }
     world.addBody(crateBody);
 
+    // Spread records evenly but keep the whole stack inside the crate walls.
+    const recordSpacing = Math.min(MAX_RECORD_SPACING, RECORD_STACK_DEPTH / Math.max(1, projects.length - 1));
+    const frontRecordZ = Math.max(FRONT_RECORD_Z, BACK_RECORD_LIMIT_Z + recordSpacing * (projects.length - 1));
     function anchorZFor(index: number): number {
-      return FRONT_RECORD_Z - index * RECORD_SPACING;
+      return frontRecordZ - index * recordSpacing;
     }
 
     const frontRestAngle = Math.atan2(
@@ -297,8 +324,11 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
       }
     }
 
+    let pull: PullAnimation | undefined;
+
     function syncRecordMeshes() {
       for (const { mesh, body } of records) {
+        if (pull?.mesh === mesh) continue;
         mesh.position.set(body.position.x, body.position.y, body.position.z);
         mesh.quaternion.set(
           body.quaternion.x,
@@ -370,8 +400,52 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
     let targetCrateRotation = FRONT_CRATE_ROTATION;
     let pointerGesture: PointerGesture | undefined;
 
-    function advanceCrate() {
-      onAdvanceRef.current?.();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function openActiveRecord() {
+      if (pull) return;
+      const index = activeIndexRef.current;
+      if (!pullTransitionRef.current || reducedMotion) {
+        onOpenRef.current(index);
+        return;
+      }
+      const { mesh } = records[index];
+      scene.attach(mesh);
+      const from = mesh.position.clone();
+      const forward = camera.getWorldDirection(new THREE.Vector3());
+      const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+      const limitingTangent = Math.min(tangent, tangent * camera.aspect);
+      const distance = (SLEEVE_SIZE / 2) / (limitingTangent * 0.86);
+      pull = {
+        index,
+        mesh,
+        start: performance.now(),
+        from,
+        lift: from.clone().add(new THREE.Vector3(0, SLEEVE_SIZE * 1.05, 0)),
+        to: camera.position.clone().addScaledVector(forward, distance),
+        fromRotation: mesh.quaternion.clone(),
+        toRotation: camera.quaternion.clone(),
+        opened: false,
+      };
+      activeRenderer.domElement.classList.add('is-pulling');
+    }
+
+    function stepPull(now: number) {
+      if (!pull) return;
+      const t = Math.min(1, (now - pull.start) / PULL_DURATION_MS);
+      const eased = easeInOutCubic(t);
+      const inverse = 1 - eased;
+      // Quadratic Bézier: rise straight out of the crate, then sweep toward the lens.
+      pull.mesh.position
+        .copy(pull.from).multiplyScalar(inverse * inverse)
+        .addScaledVector(pull.lift, 2 * inverse * eased)
+        .addScaledVector(pull.to, eased * eased);
+      const turn = easeInOutCubic(THREE.MathUtils.clamp((t - 0.18) / 0.82, 0, 1));
+      pull.mesh.quaternion.slerpQuaternions(pull.fromRotation, pull.toRotation, turn);
+      if (t === 1 && !pull.opened) {
+        pull.opened = true;
+        onOpenRef.current(pull.index);
+      }
     }
 
     function handlePointerDown(event: PointerEvent) {
@@ -399,13 +473,13 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
 
     function finishPointerGesture(event: PointerEvent, cancelled = false) {
       if (!pointerGesture || event.pointerId !== pointerGesture.pointerId) return;
-      const shouldAdvance = !cancelled && !pointerGesture.dragged;
+      const shouldOpen = !cancelled && !pointerGesture.dragged;
       pointerGesture = undefined;
       activeRenderer.domElement.classList.remove('is-dragging');
       if (activeRenderer.domElement.hasPointerCapture(event.pointerId)) {
         activeRenderer.domElement.releasePointerCapture(event.pointerId);
       }
-      if (shouldAdvance) advanceCrate();
+      if (shouldOpen) openActiveRecord();
     }
 
     function handlePointerUp(event: PointerEvent) {
@@ -419,7 +493,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.repeat || (event.key !== 'Enter' && event.key !== ' ')) return;
       event.preventDefault();
-      advanceCrate();
+      openActiveRecord();
     }
 
     function handleContextLost(event: Event) {
@@ -456,6 +530,7 @@ function RecordCrate({ projects, activeIndex, onAdvance }: RecordCrateProps) {
       driveRecords();
       world.step(1 / 60, delta, 3);
       syncRecordMeshes();
+      stepPull(performance.now());
       activeRenderer.render(scene, camera);
       animationFrame = requestAnimationFrame(render);
     }

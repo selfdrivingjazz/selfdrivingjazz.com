@@ -17,13 +17,3 @@ export interface Project {
   ambience: readonly [string, string, string] | null;
   content?: string;
 }
-
-export interface MethodSection {
-  id: string;
-  slug: string;
-  projectSlug: string;
-  title: string;
-  copy: string;
-  detail: string;
-  order: number;
-}

@@ -1,50 +1,46 @@
 'use client';
 
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import RecordCrate from '../RecordCrate';
-import type { MethodSection, Project } from '../data/content-types';
+import type { Project } from '../data/content-types';
+import { labelCode } from '../lib/labels';
+import AmbientField, { DEFAULT_AMBIENCE } from './AmbientField';
 
-interface CrateScrollExperienceProps {
-  sections: MethodSection[];
-  projects: Project[];
+/** Opt in with `?pull=1`, opt out with `?pull=0`; the choice persists per browser. */
+const PULL_TRANSITION_KEY = 'sdj:pull-transition';
+
+function readPullTransitionPreference(): boolean {
+  const requested = new URLSearchParams(window.location.search).get('pull');
+  if (requested === '1') window.localStorage.setItem(PULL_TRANSITION_KEY, '1');
+  if (requested === '0') window.localStorage.removeItem(PULL_TRANSITION_KEY);
+  return window.localStorage.getItem(PULL_TRANSITION_KEY) === '1';
 }
 
-type AmbientStyle = CSSProperties & {
-  '--ambient-a': string;
-  '--ambient-b': string;
-  '--ambient-c': string;
-};
-
-export default function CrateScrollExperience({ sections, projects }: CrateScrollExperienceProps) {
+export default function CrateScrollExperience({ projects }: { projects: Project[] }) {
+  const router = useRouter();
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const crateProjects = sections.map((section) => {
-    const project = projects.find(({ slug }) => slug === section.projectSlug);
-    if (!project) throw new Error(`Missing method project: ${section.projectSlug}`);
-    return project;
-  });
-  const ambience = crateProjects[activeIndex].ambience ?? ['#319a83', '#703f4c', '#956e66'];
+  const [pullTransition, setPullTransition] = useState(false);
+  const ambience = projects[activeIndex].ambience ?? DEFAULT_AMBIENCE;
 
   useEffect(() => {
-    document.documentElement.classList.add('crate-scroll-active');
-    return () => document.documentElement.classList.remove('crate-scroll-active');
-  }, []);
-
-  useEffect(() => {
+    setPullTransition(readPullTransitionPreference());
     const root = document.documentElement;
-    root.style.setProperty('--ambient-a', ambience[0]);
-    root.style.setProperty('--ambient-b', ambience[1]);
-    root.style.setProperty('--ambient-c', ambience[2]);
-  }, [ambience]);
-
-  useEffect(() => () => {
-    const root = document.documentElement;
-    root.style.removeProperty('--ambient-a');
-    root.style.removeProperty('--ambient-b');
-    root.style.removeProperty('--ambient-c');
+    root.classList.add('crate-scroll-active');
+    const hashTarget = window.location.hash && document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+    if (hashTarget) hashTarget.scrollIntoView({ behavior: 'instant' });
+    // Any internal link (header menu included) must leave without smooth scrolling, or Next's scroll-to-top stalls midway.
+    function releaseSmoothScroll(event: MouseEvent) {
+      if (event.target instanceof Element && event.target.closest('a[href^="/"]')) root.classList.remove('crate-scroll-active');
+    }
+    document.addEventListener('click', releaseSmoothScroll, true);
+    return () => {
+      document.removeEventListener('click', releaseSmoothScroll, true);
+      root.classList.remove('crate-scroll-active');
+    };
   }, []);
 
   useEffect(() => {
@@ -77,53 +73,60 @@ export default function CrateScrollExperience({ sections, projects }: CrateScrol
     };
   }, []);
 
-  function advanceRecord() {
-    const nextIndex = (activeIndex + 1) % sections.length;
-    document.getElementById(sections[nextIndex].id)?.scrollIntoView({ behavior: 'smooth' });
+  /** Remember the record for the way back, and drop smooth scrolling so the next page lands at its top. */
+  function prepareToLeave(slug: string) {
+    window.history.replaceState(window.history.state, '', `#${slug}`);
+    document.documentElement.classList.remove('crate-scroll-active');
   }
+
+  const openProject = useCallback((index: number) => {
+    const { slug } = projects[index];
+    prepareToLeave(slug);
+    router.push(`/projects/${slug}`);
+  }, [projects, router]);
 
   return (
     <main className="crate-prototype">
-      <div
-        className="crate-ambient"
-        style={{
-          '--ambient-a': ambience[0],
-          '--ambient-b': ambience[1],
-          '--ambient-c': ambience[2],
-        } as AmbientStyle}
-        aria-hidden="true"
-      />
-      <div className="crate-visual-panel">
+      <AmbientField ambience={ambience} />
+      <div className="crate-visual-panel" aria-label={`Record crate showing ${projects[activeIndex].title}`}>
         <RecordCrate
-          projects={crateProjects}
+          projects={projects}
           activeIndex={activeIndex}
-          onAdvance={advanceRecord}
+          onOpen={openProject}
+          pullTransition={pullTransition}
         />
       </div>
 
       <div className="crate-copy-track">
-        {sections.map((section, index) => {
+        {projects.map((project, index) => {
           const Heading = index === 0 ? 'h1' : 'h2';
-          const project = crateProjects[index];
           return (
             <section
-              key={section.id}
-              id={section.id}
+              key={project.slug}
+              id={project.slug}
               ref={(node) => { sectionRefs.current[index] = node; }}
               className={`crate-story${index === activeIndex ? ' is-active' : ''}`}
-              aria-labelledby={`${section.id}-title`}
+              aria-labelledby={`${project.slug}-title`}
             >
               <div className="crate-story-copy">
-                <Heading id={`${section.id}-title`}>{section.title}</Heading>
-                <p>{section.copy}</p>
-                <p>{section.detail}</p>
-                <Link href={`/projects/${project.slug}`}>
-                  open {project.title} <span aria-hidden="true">↗</span>
+                <div className="crate-story-meta">
+                  <span>{labelCode(projects.length, index)}</span>
+                  <span>{project.year}</span>
+                  <span>{project.format}</span>
+                </div>
+                <Heading id={`${project.slug}-title`}>{project.title}</Heading>
+                <p>{project.summary}</p>
+                <Link href={`/projects/${project.slug}`} onClick={() => prepareToLeave(project.slug)}>
+                  view project <span aria-hidden="true">↗</span>
                 </Link>
               </div>
             </section>
           );
         })}
+      </div>
+      <div className="crate-progress" aria-hidden="true">
+        <span>{labelCode(projects.length, activeIndex)}</span>
+        <span>{String(activeIndex + 1).padStart(2, '0')} / {String(projects.length).padStart(2, '0')}</span>
       </div>
     </main>
   );

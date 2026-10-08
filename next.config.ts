@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [{ source: '/method', destination: '/', permanent: true }];
+  },
 };
 
 export default nextConfig;
