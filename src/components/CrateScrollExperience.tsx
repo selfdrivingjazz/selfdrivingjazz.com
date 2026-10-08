@@ -11,6 +11,11 @@ import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
 import AmbientField, { type Ambience, DEFAULT_AMBIENCE } from './AmbientField';
 
+/** Older releases named in the "older works" blurb before collapsing to "and N more". */
+const OLDER_WORKS_LISTED = 4;
+/** Distance (px) over which copy fades as it slides under the crate on narrow screens. */
+const COPY_FADE_DISTANCE = 72;
+
 interface CrateStory {
   id: string;
   href: string;
@@ -35,6 +40,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
   const router = useRouter();
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [pullTransition, setPullTransition] = useState(false);
 
@@ -44,7 +50,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
     const storyList: CrateStory[] = featured.map((project, index) => ({
       id: project.slug,
       href: `/projects/${project.slug}`,
-      meta: [labelCode(projects.length, index), project.year, project.format],
+      meta: [labelCode(projects.length, index), project.year],
       title: project.title,
       summary: project.summary,
       cta: 'view project',
@@ -62,7 +68,9 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
         href: '/projects',
         meta: [range, `${older.length} releases`],
         title: 'Older works',
-        summary: older.map((project) => project.title).join(' · '),
+        summary: older.length > OLDER_WORKS_LISTED
+          ? `${older.slice(0, OLDER_WORKS_LISTED).map((project) => project.title).join(' · ')} · and ${older.length - OLDER_WORKS_LISTED} more`
+          : older.map((project) => project.title).join(' · '),
         cta: 'browse the catalogue',
         ambience: DEFAULT_AMBIENCE,
       });
@@ -94,9 +102,16 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
       frameRef.current = null;
       let nextIndex = 0;
       let distance = Number.POSITIVE_INFINITY;
+      // On narrow screens the crate sits above the copy; copy fades out before passing beneath it.
+      const panelBottom = panelRef.current?.getBoundingClientRect().bottom ?? 0;
       sectionRefs.current.forEach((section, index) => {
         if (!section) return;
         const candidateDistance = Math.abs(section.getBoundingClientRect().top);
+        const copy = section.firstElementChild as HTMLElement | null;
+        if (copy) {
+          const reveal = (copy.getBoundingClientRect().top - panelBottom + COPY_FADE_DISTANCE / 2) / COPY_FADE_DISTANCE;
+          copy.style.setProperty('--copy-reveal', String(Math.min(1, Math.max(0, reveal))));
+        }
         if (candidateDistance >= distance) return;
         distance = candidateDistance;
         nextIndex = index;
@@ -134,7 +149,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
   return (
     <main className="crate-prototype">
       <AmbientField ambience={ambience} />
-      <div className="crate-visual-panel" aria-label={`Record crate showing ${stories[activeIndex].title}`}>
+      <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${stories[activeIndex].title}`}>
         <RecordCrate
           records={records}
           activeIndex={activeIndex}

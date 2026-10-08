@@ -530,8 +530,12 @@ a { color: inherit; }
     padding: 63svh var(--page-pad) calc(30px + env(safe-area-inset-bottom));
     align-items: flex-end;
   }
-  .crate-story-copy {
-    opacity: 0;
+  /* Copy fades out as it slides up under the crate (see --copy-reveal in CrateScrollExperience). */
+  .crate-story-copy,
+  .crate-story.is-active .crate-story-copy {
+    opacity: var(--copy-reveal, 0);
+    transform: none;
+    transition: none;
     text-shadow: 0 1px 18px rgba(0, 0, 0, .5);
   }
   .crate-story h1,
@@ -560,7 +564,7 @@ a { color: inherit; }
 }
 .index-main > section { position: relative; z-index: 1; }
 .index-hero-link {
-  min-height: calc(100svh - var(--header-height) - var(--content-top) - 24px);
+  padding-top: 8px;
   display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr);
   align-items: center;
@@ -572,7 +576,8 @@ a { color: inherit; }
 .index-hero-art {
   position: relative;
   aspect-ratio: 1;
-  width: min(100%, calc(100svh - var(--header-height) - 96px));
+  /* Leaves room for the back catalogue to start above the fold. */
+  width: min(100%, calc(100svh - 380px));
   justify-self: center;
   box-shadow: 0 40px 120px rgba(0, 0, 0, .55), 0 6px 22px rgba(0, 0, 0, .35);
   transition: transform 520ms var(--ease-out), box-shadow 520ms var(--ease-out);
@@ -597,7 +602,7 @@ a { color: inherit; }
 }
 .index-hero-link:hover .index-hero-art,
 .index-hero-link:focus-visible .index-hero-art {
-  transform: translateY(-6px) rotate(-.6deg);
+  transform: translateY(-6px);
   box-shadow: 0 54px 140px rgba(0, 0, 0, .6), 0 8px 26px rgba(0, 0, 0, .4);
 }
 .index-hero-link:focus-visible { outline: none; }
@@ -668,7 +673,7 @@ a { color: inherit; }
 .index-rule h2 { margin: 0; color: #f0f0ed; font: inherit; }
 .record-wall {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(210px, 40vw), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   gap: clamp(28px, 4vw, 48px) clamp(16px, 2.4vw, 28px);
   margin: 0;
   padding: clamp(24px, 3vw, 40px) 0 0;
@@ -798,7 +803,6 @@ a { color: inherit; }
   font-variant-numeric: tabular-nums;
   letter-spacing: .12em;
 }
-.detail-label span { color: var(--muted); }
 .detail-hero {
   display: grid;
   gap: clamp(28px, 5vw, 80px);

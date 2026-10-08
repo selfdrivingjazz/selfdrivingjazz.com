@@ -34,10 +34,7 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
       <article className="project-detail">
         <nav className="detail-bar" aria-label="Project">
           <Link href={crateHref(projectIndex, project.slug)}><span aria-hidden="true">←</span> back</Link>
-          <span className="detail-label">
-            {label}
-            <span> / {String(projectCount).padStart(3, '0')}</span>
-          </span>
+          <span className="detail-label">{label}</span>
         </nav>
 
         <div className="detail-hero">
