@@ -80,7 +80,7 @@ async function readProject(filename: string, includeContent: boolean): Promise<P
 
 export async function getProjects(): Promise<Project[]> {
   const projects = await Promise.all(contentFiles(PROJECTS_ROOT).map((filename) => readProject(filename, false)));
-  return projects.sort((left, right) => left.order - right.order);
+  return projects.sort((left, right) => right.catalog - left.catalog);
 }
 
 export async function getProject(slug: string): Promise<Project | undefined> {

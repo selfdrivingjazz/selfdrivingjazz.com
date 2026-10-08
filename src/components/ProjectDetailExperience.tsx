@@ -13,15 +13,14 @@ import CoverFlip from './CoverFlip';
 interface ProjectDetailExperienceProps {
   project: Project;
   projectIndex: number;
-  projectCount: number;
   newer?: Project;
   older?: Project;
 }
 
 type DetailStyle = CSSProperties & { '--detail-art': string };
 
-export default async function ProjectDetailExperience({ project, projectIndex, projectCount, newer, older }: ProjectDetailExperienceProps) {
-  const label = labelCode(projectCount, projectIndex);
+export default async function ProjectDetailExperience({ project, projectIndex, newer, older }: ProjectDetailExperienceProps) {
+  const label = labelCode(project.catalog);
 
   return (
     <main
@@ -64,21 +63,29 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
         </div>
 
         <div className="project-writeup">
-          <MDXRemote source={project.content ?? ''} />
+          {/* Vault prose is plain markdown, not MDX: braces and angle brackets stay literal. */}
+          <MDXRemote
+            source={project.content ?? ''}
+            options={{ mdxOptions: { format: 'md' } }}
+            components={{
+              // Plain <img>: sync-vault already wrote optimised WebP into public/project-media.
+              img: (props) => <img {...props} alt={props.alt ?? ''} loading="lazy" decoding="async" />,
+            }}
+          />
         </div>
 
         {(newer || older) && (
           <nav className="detail-neighbours" aria-label="More releases">
             {[
-              { neighbour: newer, label: 'newer', offset: -1 },
-              { neighbour: older, label: 'older', offset: 1 },
-            ].map(({ neighbour, label: direction, offset }) => neighbour && (
+              { neighbour: newer, direction: 'newer' },
+              { neighbour: older, direction: 'older' },
+            ].map(({ neighbour, direction }) => neighbour && (
               <Link key={direction} className={`neighbour neighbour-${direction}`} href={`/projects/${neighbour.slug}`}>
                 <span className="neighbour-art" style={{ background: neighbour.placeholder }}>
                   <Image src={neighbour.coverUrl} width={240} height={240} sizes="72px" alt="" />
                 </span>
                 <span className="neighbour-copy">
-                  <span className="neighbour-meta">{labelCode(projectCount, projectIndex + offset)}</span>
+                  <span className="neighbour-meta">{labelCode(neighbour.catalog)}</span>
                   <span className="neighbour-title">{neighbour.title}</span>
                 </span>
               </Link>

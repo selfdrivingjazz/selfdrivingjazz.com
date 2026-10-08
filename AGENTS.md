@@ -1,6 +1,46 @@
 # selfdrivingjazz.com
 
-Next.js site; content lives in `content/projects/*.mdx`.
+Next.js site. Project content is **generated from the Obsidian vault**; never
+hand-edit `content/projects/`, `public/project-covers/` or `public/project-media/`.
+
+## Content: Obsidian vault → site
+
+Source of truth: `/home/jmill/sdj/nhx4b/nobody/publish/project/*.md` (the
+same notes jmill.dev reads). A note is published when `publish: true`; its
+title is the filename without the leading emoji. Site frontmatter fields:
+
+| field | use |
+| --- | --- |
+| `catalog` | label `SDJ-<n>`, unique, higher = newer; sets order |
+| `summary`, `status` | one-line summary, project status |
+| `year`, `genre`, `artist`, `url` | year, format, collaborators, outbound link |
+| `cover`, `cover-alt` | `"[[attachment]]"` in `nobody/attachments/` + alt text |
+| `back-cover`, `back-cover-alt` | optional flip-side art |
+| `ambience` | optional three hex colours for the background |
+
+The note body is the write-up: H1 lines are dropped, `![[image]]` embeds are
+copied as optimised WebP into `public/project-media/<slug>/`, and `[[links]]`
+become text (or links to other project pages).
+
+```sh
+npm run sync:vault    # regenerate content + images from the vault; commit the result
+```
+
+The sync fails loudly on missing fields or duplicate catalogue numbers.
+
+## Covers: Codex image generation → vault
+
+```sh
+npm run covers -- <slug> [--count 3] [--direction "…"]   # ≈80s per image
+npm run use-cover -- <slug> design/.candidates/<slug>/<run>/candidate-N.png
+npm run sync:vault
+```
+
+`covers` runs `codex exec` with the built-in image tool (uses the ChatGPT plan
+Codex is signed in with), the brief in `design/cover-direction.md` and the
+approved covers in `design/cover-references/`, then publishes the candidates to
+MTS Outputs. `use-cover` copies the pick into the vault and updates the note.
+Add newly approved covers to `design/cover-references/` to steer future runs.
 
 ## Tailnet preview (MTS service `selfdrivingjazz`)
 

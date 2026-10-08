@@ -1,4 +1,4 @@
-/** Catalogue label code for a release, e.g. `SDJ-014`. Projects are ordered newest first. */
-export function labelCode(projectCount: number, index: number): string {
-  return `SDJ-${String(projectCount - index).padStart(3, '0')}`;
+/** Catalogue label code for a release, e.g. `SDJ-014`. */
+export function labelCode(catalog: number): string {
+  return `SDJ-${String(catalog).padStart(3, '0')}`;
 }

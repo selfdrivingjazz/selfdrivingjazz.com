@@ -59,7 +59,6 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       <ProjectDetailExperience
         project={project}
         projectIndex={projectIndex}
-        projectCount={projects.length}
         newer={projects[projectIndex - 1]}
         older={projects[projectIndex + 1]}
       />

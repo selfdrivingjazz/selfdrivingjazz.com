@@ -50,7 +50,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
     const storyList: CrateStory[] = featured.map((project, index) => ({
       id: project.slug,
       href: `/projects/${project.slug}`,
-      meta: [labelCode(projects.length, index), project.year],
+      meta: [labelCode(project.catalog), project.year],
       title: project.title,
       summary: project.summary,
       cta: 'view project',
@@ -62,7 +62,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
       color: project.coverColor,
     }));
     if (older.length > 0) {
-      const range = `${labelCode(projects.length, projects.length - 1)} – ${labelCode(projects.length, CRATE_RELEASES)}`;
+      const range = `${labelCode(older[older.length - 1].catalog)} – ${labelCode(older[0].catalog)}`;
       storyList.push({
         id: OLDER_WORKS_ID,
         href: '/projects',

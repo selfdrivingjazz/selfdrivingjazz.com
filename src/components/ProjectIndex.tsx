@@ -78,7 +78,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
           <div className="index-hero-copy">
             <div className="index-kicker">
               <span>latest release</span>
-              <span>{labelCode(projects.length, 0)}</span>
+              <span>{labelCode(latest.catalog)}</span>
             </div>
             <h1 id="latest-release-title" style={titleFitStyle(latest.title)}>{latest.title}</h1>
             <p>{latest.summary}</p>
@@ -107,7 +107,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
                     <Image src={project.coverUrl} width={600} height={600} sizes="(min-width: 1100px) 280px, (min-width: 700px) 30vw, 46vw" alt="" />
                   </span>
                   <span className="record-tile-meta">
-                    <span>{labelCode(projects.length, index)}</span>
+                    <span>{labelCode(project.catalog)}</span>
                     <span>{project.year}</span>
                   </span>
                   <span className="record-tile-title">{project.title}</span>

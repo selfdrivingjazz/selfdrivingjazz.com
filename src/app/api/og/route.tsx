@@ -49,7 +49,7 @@ export async function GET(request: Request) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {project && (
               <div style={{ color: '#8d8d89', fontSize: '18px', letterSpacing: '2px' }}>
-                {labelCode(projects.length, projectIndex)}
+                {labelCode(project.catalog)}
               </div>
             )}
             {project && (

@@ -7,7 +7,10 @@
     "dev": "next dev",
     "build": "next build",
     "typecheck": "tsc --noEmit",
-    "start": "next start"
+    "start": "next start",
+    "sync:vault": "node scripts/sync-vault.ts",
+    "covers": "node scripts/cover-candidates.ts",
+    "use-cover": "node scripts/use-cover.ts"
   },
   "dependencies": {
     "cannon-es": "^0.20.0",

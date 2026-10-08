@@ -1,5 +1,6 @@
 export interface Project {
-  order: number;
+  /** Catalogue number from the vault note; the label code is `SDJ-<catalog>` and higher is newer. */
+  catalog: number;
   slug: string;
   title: string;
   summary: string;
