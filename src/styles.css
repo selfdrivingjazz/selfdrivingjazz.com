@@ -913,7 +913,7 @@ a { color: inherit; }
 }
 .project-writeup {
   max-width: 640px;
-  margin: clamp(56px, 9vh, 96px) auto 0;
+  margin: 48px auto 0;
 }
 .project-writeup p {
   margin: 0 0 1.2em;
@@ -987,10 +987,10 @@ a { color: inherit; }
 
 @media (min-width: 900px) {
   .detail-hero {
-    min-height: min(760px, calc(100svh - var(--header-height) - 140px));
     grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
   }
-  .detail-covers { width: min(100%, 62svh, 620px); justify-self: end; }
+  /* Cover leaves room for the first lines of the write-up above the fold. */
+  .detail-covers { width: min(100%, calc(100svh - 390px), 600px); justify-self: end; }
 }
 @media (max-width: 899px) {
   .detail-main { padding-top: 8px; padding-bottom: 64px; }
@@ -1000,7 +1000,12 @@ a { color: inherit; }
   .detail-header h1 { --title-size: clamp(46px, 14vw, 76px); }
   .detail-summary { font-size: 18px; }
   .project-facts { gap: 12px 22px; }
-  .project-writeup { margin-top: 48px; }
+  .detail-hero { gap: 20px; }
+  .detail-covers { width: min(100% + var(--page-pad) * .8, 40svh); justify-self: center; }
+  .detail-summary { margin-top: 14px; }
+  .project-facts { margin-top: 18px; }
+  .outbound-link { margin-top: 20px; }
+  .project-writeup { margin-top: 28px; }
   .project-writeup p { font-size: 16px; line-height: 1.62; }
   .project-writeup > p:first-child { font-size: 19px; }
   .detail-neighbours { gap: 12px; }
