@@ -86,13 +86,17 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
     root.classList.add('crate-scroll-active');
     const hashTarget = window.location.hash && document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
     if (hashTarget) hashTarget.scrollIntoView({ behavior: 'instant' });
-    // Any internal link (header menu included) must leave without smooth scrolling, or Next's scroll-to-top stalls midway.
-    function releaseSmoothScroll(event: MouseEvent) {
-      if (event.target instanceof Element && event.target.closest('a[href^="/"]')) root.classList.remove('crate-scroll-active');
+    // Links that leave this page (header menu included) must do so without smooth scrolling, or Next's
+    // scroll-to-top stalls midway. A link back to this page (the logo) returns to the first record.
+    function handleLinkClick(event: MouseEvent) {
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href^="/"]') : null;
+      if (!link) return;
+      if (link.pathname !== window.location.pathname) root.classList.remove('crate-scroll-active');
+      else if (!link.hash) window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    document.addEventListener('click', releaseSmoothScroll, true);
+    document.addEventListener('click', handleLinkClick, true);
     return () => {
-      document.removeEventListener('click', releaseSmoothScroll, true);
+      document.removeEventListener('click', handleLinkClick, true);
       root.classList.remove('crate-scroll-active');
     };
   }, []);
