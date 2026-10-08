@@ -17,5 +17,7 @@ export interface Project {
   ambience: readonly [string, string, string] | null;
   /** CSS background approximating the cover's colours, shown until the image loads. */
   placeholder: string;
+  /** Average cover colour (hex), for surfaces that can't use a gradient (WebGL sleeves). */
+  coverColor: string;
   content?: string;
 }

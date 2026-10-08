@@ -9,7 +9,13 @@ type Vector3Tuple = [number, number, number];
 
 /** A sleeve in the crate: either a cover image, or a generated collage sleeve (e.g. "older works"). */
 export type CrateRecord =
-  | { cover: string }
+  | {
+    cover: string;
+    /** Tried if `cover` fails to load. */
+    fallbackCover: string;
+    /** Shown on the sleeve until the cover texture arrives. */
+    color: string;
+  }
   | { collage: string[]; title: string; label: string };
 
 interface RecordCrateProps {
@@ -52,7 +58,8 @@ const SLEEVE_DEPTH = 0.026;
 const RECORD_SPACING = 0.11;
 const BASE_TOP = 0.08;
 const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
-// Stack sits near the crate's middle so forward- and back-leaning records tilt by similar, moderate angles.
+const BACK_LEAN = THREE.MathUtils.degToRad(13);
+// Stack sits near the crate's middle so records tipped forward rest at a moderate angle on the front rail.
 const FRONT_RECORD_Z = 0.15;
 const RIM_TARGET_Y = 1.25;
 // Leaning records stop just short of the rail's inner face instead of pressing into it (which made them jitter).
@@ -267,10 +274,8 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
       RIM_TARGET_Z - anchorZFor(0),
       RIM_TARGET_Y - RECORD_ANCHOR_Y,
     );
-    const backRestAngle = Math.atan2(
-      -RIM_TARGET_Z - anchorZFor(recordCount - 1),
-      RIM_TARGET_Y - RECORD_ANCHOR_Y,
-    );
+    // Waiting records stand nearly upright (free of the back rail) so the front cover faces the viewer.
+    const backRestAngle = -BACK_LEAN;
 
     function angleForSelection(index: number, selectedIndex: number): number {
       return index < selectedIndex ? frontRestAngle : backRestAngle;
@@ -284,13 +289,7 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
     }
 
     let disposed = false;
-    const loadingManager = new THREE.LoadingManager();
-    loadingManager.onLoad = () => {
-      requestAnimationFrame(() => {
-        if (!disposed) setReady(true);
-      });
-    };
-    const textureLoader = new THREE.TextureLoader(loadingManager);
+    const textureLoader = new THREE.TextureLoader();
     // One sleeve geometry for all records. Its edge faces sample the outermost strip of the cover,
     // so a sleeve's spine reads as the cover's own border colours rather than a flat dark band.
     const sleeveGeometry = new THREE.BoxGeometry(SLEEVE_SIZE, SLEEVE_SIZE, SLEEVE_DEPTH);
@@ -309,34 +308,48 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
     }
     uv.needsUpdate = true;
     const records = crateRecords.map((record, index) => {
-      let texture: THREE.Texture;
+      // Sleeves render in their cover's average colour until the texture arrives.
+      const coverMaterial = new THREE.MeshStandardMaterial({
+        color: 'cover' in record ? record.color : 0x0b0c0c,
+        roughness: 0.9,
+        metalness: 0,
+      });
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color('cover' in record ? record.color : 0x0b0c0c).multiplyScalar(0.7),
+        roughness: 0.95,
+        metalness: 0,
+      });
+      materials.add(coverMaterial);
+      materials.add(edgeMaterial);
+
+      function applyTexture(texture: THREE.Texture) {
+        if (disposed) {
+          texture.dispose();
+          return;
+        }
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = Math.min(8, activeRenderer.capabilities.getMaxAnisotropy());
+        textures.push(texture);
+        coverMaterial.map = texture;
+        coverMaterial.color.set(0xd8d8d8);
+        edgeMaterial.map = texture;
+        edgeMaterial.color.set(0x9a9a9a);
+        coverMaterial.needsUpdate = true;
+        edgeMaterial.needsUpdate = true;
+      }
+
       if ('cover' in record) {
-        texture = textureLoader.load(record.cover);
+        textureLoader.load(record.cover, applyTexture, undefined, () => {
+          textureLoader.load(record.fallbackCover, applyTexture);
+        });
       } else {
         const canvas = document.createElement('canvas');
         canvas.width = 1024;
         canvas.height = 1024;
         const canvasTexture = new THREE.CanvasTexture(canvas);
         drawCollageSleeve(canvas, record, () => { canvasTexture.needsUpdate = true; });
-        texture = canvasTexture;
+        applyTexture(canvasTexture);
       }
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.anisotropy = Math.min(8, activeRenderer.capabilities.getMaxAnisotropy());
-      textures.push(texture);
-      const coverMaterial = new THREE.MeshStandardMaterial({
-        map: texture,
-        color: 0xd8d8d8,
-        roughness: 0.9,
-        metalness: 0,
-      });
-      materials.add(coverMaterial);
-      const edgeMaterial = new THREE.MeshStandardMaterial({
-        map: texture,
-        color: 0x9a9a9a,
-        roughness: 0.95,
-        metalness: 0,
-      });
-      materials.add(edgeMaterial);
 
       const mesh = new THREE.Mesh(sleeveGeometry, [
         edgeMaterial,
@@ -619,6 +632,8 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
       animationFrame = requestAnimationFrame(render);
     }
     render();
+    // Sleeves already show their cover colours, so the loading mark only covers WebGL start-up.
+    setReady(true);
 
     return () => {
       disposed = true;

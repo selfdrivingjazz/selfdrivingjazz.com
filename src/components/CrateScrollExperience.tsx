@@ -50,7 +50,11 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
       cta: 'view project',
       ambience: project.ambience ?? DEFAULT_AMBIENCE,
     }));
-    const recordList: CrateRecord[] = featured.map((project) => ({ cover: optimizedImageUrl(project.recordCover, 828) }));
+    const recordList: CrateRecord[] = featured.map((project) => ({
+      cover: optimizedImageUrl(project.recordCover, 828),
+      fallbackCover: project.recordCover,
+      color: project.coverColor,
+    }));
     if (older.length > 0) {
       const range = `${labelCode(projects.length, projects.length - 1)} – ${labelCode(projects.length, CRATE_RELEASES)}`;
       storyList.push({

@@ -8,7 +8,12 @@ import type { Project } from '../data/content-types';
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 const PROJECTS_ROOT = path.join(CONTENT_ROOT, 'projects');
 const PUBLIC_ROOT = path.join(process.cwd(), 'public');
-const FALLBACK_PLACEHOLDER = '#121313';
+const FALLBACK_COLORS: CoverColors = { placeholder: '#121313', coverColor: '#121313' };
+
+interface CoverColors {
+  placeholder: string;
+  coverColor: string;
+}
 
 function contentFiles(root: string): string[] {
   return fs.readdirSync(root)
@@ -21,11 +26,14 @@ function readDocument(root: string, filename: string) {
   return matter(source);
 }
 
-const placeholders = new Map<string, Promise<string>>();
+const coverColorCache = new Map<string, Promise<CoverColors>>();
 
-/** Corner colours of a 3×3 downsample, blended as soft radial gradients over the centre colour. */
-function coverPlaceholder(coverUrl: string): Promise<string> {
-  const cached = placeholders.get(coverUrl);
+/**
+ * From a 3×3 downsample: corner colours blended as soft radial gradients over the centre colour
+ * (`placeholder`), plus the average of all nine samples (`coverColor`).
+ */
+function coverColors(coverUrl: string): Promise<CoverColors> {
+  const cached = coverColorCache.get(coverUrl);
   if (cached) return cached;
   const computed = coverUrl.startsWith('/')
     ? sharp(path.join(PUBLIC_ROOT, coverUrl.slice(1)))
@@ -38,26 +46,34 @@ function coverPlaceholder(coverUrl: string): Promise<string> {
           const offset = (y * 3 + x) * 3;
           return `rgb(${pixels[offset]} ${pixels[offset + 1]} ${pixels[offset + 2]})`;
         };
-        return [
-          `radial-gradient(at 0% 0%, ${color(0, 0)}, transparent 70%)`,
-          `radial-gradient(at 100% 0%, ${color(2, 0)}, transparent 70%)`,
-          `radial-gradient(at 0% 100%, ${color(0, 2)}, transparent 70%)`,
-          `radial-gradient(at 100% 100%, ${color(2, 2)}, transparent 70%)`,
-          color(1, 1),
-        ].join(', ');
+        const average = [0, 1, 2].map((channel) => {
+          let sum = 0;
+          for (let sample = 0; sample < 9; sample += 1) sum += pixels[sample * 3 + channel];
+          return Math.round(sum / 9).toString(16).padStart(2, '0');
+        });
+        return {
+          placeholder: [
+            `radial-gradient(at 0% 0%, ${color(0, 0)}, transparent 70%)`,
+            `radial-gradient(at 100% 0%, ${color(2, 0)}, transparent 70%)`,
+            `radial-gradient(at 0% 100%, ${color(0, 2)}, transparent 70%)`,
+            `radial-gradient(at 100% 100%, ${color(2, 2)}, transparent 70%)`,
+            color(1, 1),
+          ].join(', '),
+          coverColor: `#${average.join('')}`,
+        };
       })
-      .catch(() => FALLBACK_PLACEHOLDER)
-    : Promise.resolve(FALLBACK_PLACEHOLDER);
-  placeholders.set(coverUrl, computed);
+      .catch(() => FALLBACK_COLORS)
+    : Promise.resolve(FALLBACK_COLORS);
+  coverColorCache.set(coverUrl, computed);
   return computed;
 }
 
 async function readProject(filename: string, includeContent: boolean): Promise<Project> {
   const document = readDocument(PROJECTS_ROOT, filename);
-  const data = document.data as Omit<Project, 'content' | 'placeholder'>;
+  const data = document.data as Omit<Project, 'content' | keyof CoverColors>;
   return {
     ...data,
-    placeholder: await coverPlaceholder(data.coverUrl),
+    ...await coverColors(data.coverUrl),
     content: includeContent ? document.content.trim() : undefined,
   };
 }
