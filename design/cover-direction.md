@@ -13,11 +13,13 @@ dry joke hidden in plain sight.
   offset or screen print on paper, real halftone, slight misregistration, paper
   grain, gentle wear. Nothing should look digital, photorealistic-modern, or
   post-1980.
-- **One idea:** a single visual concept drawn from what the project actually is,
-  committed to completely and presented deadpan.
-- **Typography:** the project title, spelled exactly, in a period grotesk
-  (Helvetica, Univers, Akzidenz) or a period display face. Set it with Swiss
-  confidence. A tiny catalogue mark is allowed; no other text.
+- **Image first:** a single visual concept drawn from what the project actually
+  is, committed to completely and presented deadpan. The image carries the
+  cover and fills most of it; it should reward a second look.
+- **Quiet typography:** the project title, spelled exactly, small and precise in
+  a period grotesk (Helvetica, Univers, Akzidenz) — a caption-sized line or a
+  modest block, never a headline that dominates the sleeve. A tiny catalogue
+  mark is allowed; no other text.
 - **Restraint:** limited flat colour (two or three inks), generous space, a clear
   grid. Square 1:1.
 
@@ -28,16 +30,16 @@ composition — the series is a vocabulary, not a layout to copy.
 
 ### Photographic library sleeve
 Grainy black-and-white photograph — repeated, sequenced or brutally cropped —
-inset in a paper border with a heavy grotesk title and one flat colour block.
+inset in a paper border with one flat colour block and a modest grotesk title.
 
 ### Own-brand packaging
-1960s–70s supermarket own-label design: big flat fields of one bold colour, a
-simple stylised illustration or abstract shape of the subject, white space, plain
-grotesk title as if naming a product.
+1960s–70s supermarket own-label design: big flat fields of one bold colour and a
+simple stylised illustration or abstract shape of the subject that dominates the
+pack; the title small and plain, as if naming a product.
 
 ### Swiss poster
-Strict grid, typographic architecture and pure geometric abstraction; the title
-is a structural element of the composition.
+Strict grid and pure geometric abstraction — shapes, rules and colour fields do
+the work; the title is a small, exact element placed on the grid.
 
 ### Technofuturist library illustration
 Optimistic period future: dot-screen spheres, diagrammatic machines, block-built
@@ -45,7 +47,7 @@ cities, flat cut shapes in three inks on a deep or pale ground.
 
 ### Pelican cover
 Small photographic or engraved cut-out collaged into flat colour areas with a
-witty juxtaposition; a framed or banded title panel.
+witty juxtaposition; a small, quietly placed title.
 
 ### Op-art pattern
 A single systematic pattern (lines, dots, modules) that bends, breaks or repeats
