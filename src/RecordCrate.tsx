@@ -4,12 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import RecordCrateFallback from './RecordCrateFallback';
-import type { Project } from './data/content-types';
 
 type Vector3Tuple = [number, number, number];
 
+/** A sleeve in the crate: either a cover image, or a generated collage sleeve (e.g. "older works"). */
+export type CrateRecord =
+  | { cover: string }
+  | { collage: string[]; title: string; label: string };
+
 interface RecordCrateProps {
-  projects: Project[];
+  records: CrateRecord[];
   activeIndex: number;
   /** Called when the front record is tapped/activated. */
   onOpen: (index: number) => void;
@@ -38,19 +42,23 @@ interface PointerGesture {
 const CRATE_WIDTH = 3.55;
 const CRATE_DEPTH = 3.18;
 const POST_SIZE = 0.14;
+// Rails sit inside the posts and are slightly slimmer, so no faces are coplanar (no z-fighting at the joints).
+const RAIL_SIZE = 0.12;
 const POST_X = 1.68;
 const POST_Z = (CRATE_DEPTH - POST_SIZE) / 2;
 const POST_HEIGHT = 1.32;
 const SLEEVE_SIZE = 2.78;
-const SLEEVE_DEPTH = 0.075;
-const MAX_RECORD_SPACING = 0.135;
-const RECORD_STACK_DEPTH = 1.5;
-const BACK_RECORD_LIMIT_Z = -1.41;
+const SLEEVE_DEPTH = 0.036;
+const RECORD_SPACING = 0.11;
 const BASE_TOP = 0.08;
 const RECORD_ANCHOR_Y = BASE_TOP + SLEEVE_DEPTH / 2 + 0.004;
-const FRONT_RECORD_Z = -0.6;
+// Stack sits near the crate's middle so forward- and back-leaning records tilt by similar, moderate angles.
+const FRONT_RECORD_Z = 0.15;
 const RIM_TARGET_Y = 1.25;
-const RIM_TARGET_Z = POST_Z;
+// Leaning records stop just short of the rail's inner face instead of pressing into it (which made them jitter).
+const RIM_TARGET_Z = POST_Z - RAIL_SIZE / 2 - SLEEVE_DEPTH / 2 - 0.012;
+const MOTOR_DEADBAND = 0.003;
+const SETTLE_FRAMES = 30;
 const HINGE_AXIS = new CANNON.Vec3(1, 0, 0);
 const VIEW_DIRECTION = new THREE.Vector3(0, 0.62, 1.18).normalize();
 const FRONT_CRATE_ROTATION = -0.20;
@@ -63,7 +71,46 @@ function easeInOutCubic(t: number): number {
 }
 
 
-function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: RecordCrateProps) {
+function drawCollageSleeve(canvas: HTMLCanvasElement, record: { collage: string[]; title: string; label: string }, onChange: () => void) {
+  const context = canvas.getContext('2d');
+  if (!context) return;
+  const size = canvas.width;
+  const tile = size / 3;
+  context.fillStyle = '#0b0c0c';
+  context.fillRect(0, 0, size, size);
+  const slots = [0, 1, 2, 3, 5, 6, 7, 8];
+  record.collage.slice(0, slots.length).forEach((src, index) => {
+    const image = new Image();
+    image.onload = () => {
+      const slot = slots[index];
+      context.globalAlpha = 0.78;
+      context.drawImage(image, (slot % 3) * tile, Math.floor(slot / 3) * tile, tile, tile);
+      context.globalAlpha = 1;
+      onChange();
+    };
+    image.src = src;
+  });
+  const drawLabel = () => {
+    const fontFamily = getComputedStyle(document.body).fontFamily;
+    context.fillStyle = '#0b0c0c';
+    context.fillRect(tile, tile, tile, tile);
+    context.fillStyle = '#f0f0ed';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    const [first, ...rest] = record.title.split(' ');
+    context.font = `600 ${Math.round(tile * 0.2)}px ${fontFamily}`;
+    context.fillText(first, size / 2, tile * 1.38);
+    context.fillText(rest.join(' '), size / 2, tile * 1.58);
+    context.fillStyle = '#95958f';
+    context.font = `500 ${Math.round(tile * 0.07)}px ${fontFamily}`;
+    context.fillText(record.label, size / 2, tile * 1.8);
+    onChange();
+  };
+  drawLabel();
+  document.fonts?.ready.then(drawLabel);
+}
+
+function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransition = false }: RecordCrateProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const activeIndexRef = useRef(activeIndex);
   const onOpenRef = useRef(onOpen);
@@ -206,18 +253,16 @@ function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: 
       }
     }
     for (const y of [0.48, 1.25]) {
-      box([CRATE_WIDTH - 0.07, POST_SIZE, POST_SIZE], [0, y, -POST_Z], crateMaterial);
-      box([CRATE_WIDTH - 0.07, POST_SIZE, POST_SIZE], [0, y, POST_Z], crateMaterial);
-      box([POST_SIZE, POST_SIZE, CRATE_DEPTH - 0.1], [-POST_X, y, 0], crateMaterial);
-      box([POST_SIZE, POST_SIZE, CRATE_DEPTH - 0.1], [POST_X, y, 0], crateMaterial);
+      box([POST_X * 2, RAIL_SIZE, RAIL_SIZE], [0, y, -POST_Z], crateMaterial);
+      box([POST_X * 2, RAIL_SIZE, RAIL_SIZE], [0, y, POST_Z], crateMaterial);
+      box([RAIL_SIZE, RAIL_SIZE, POST_Z * 2], [-POST_X, y, 0], crateMaterial);
+      box([RAIL_SIZE, RAIL_SIZE, POST_Z * 2], [POST_X, y, 0], crateMaterial);
     }
     world.addBody(crateBody);
 
-    // Spread records evenly but keep the whole stack inside the crate walls.
-    const recordSpacing = Math.min(MAX_RECORD_SPACING, RECORD_STACK_DEPTH / Math.max(1, projects.length - 1));
-    const frontRecordZ = Math.max(FRONT_RECORD_Z, BACK_RECORD_LIMIT_Z + recordSpacing * (projects.length - 1));
+    const recordCount = crateRecords.length;
     function anchorZFor(index: number): number {
-      return frontRecordZ - index * recordSpacing;
+      return FRONT_RECORD_Z - index * RECORD_SPACING;
     }
 
     const frontRestAngle = Math.atan2(
@@ -225,7 +270,7 @@ function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: 
       RIM_TARGET_Y - RECORD_ANCHOR_Y,
     );
     const backRestAngle = Math.atan2(
-      -RIM_TARGET_Z - anchorZFor(projects.length - 1),
+      -RIM_TARGET_Z - anchorZFor(recordCount - 1),
       RIM_TARGET_Y - RECORD_ANCHOR_Y,
     );
 
@@ -248,8 +293,18 @@ function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: 
       });
     };
     const textureLoader = new THREE.TextureLoader(loadingManager);
-    const records = projects.map((project, index) => {
-      const texture = textureLoader.load(project.recordCover);
+    const records = crateRecords.map((record, index) => {
+      let texture: THREE.Texture;
+      if ('cover' in record) {
+        texture = textureLoader.load(record.cover);
+      } else {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        const canvasTexture = new THREE.CanvasTexture(canvas);
+        drawCollageSleeve(canvas, record, () => { canvasTexture.needsUpdate = true; });
+        texture = canvasTexture;
+      }
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = Math.min(8, activeRenderer.capabilities.getMaxAnisotropy());
       textures.push(texture);
@@ -305,22 +360,31 @@ function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: 
       hinge.setMotorMaxForce(3);
       world.addConstraint(hinge);
 
-      return { mesh, body, hinge };
+      return { mesh, body, hinge, target: Number.NaN, stillFrames: 0 };
     });
 
     function currentAngle(body: CANNON.Body): number {
       return 2 * Math.atan2(body.quaternion.x, body.quaternion.w);
     }
 
+    // Settled records are put to sleep; otherwise sleeves resting on each other jitter in the contact solver.
     function driveRecords() {
-      for (const [index, { body, hinge }] of records.entries()) {
+      for (const [index, record] of records.entries()) {
+        const { body, hinge } = record;
         const target = angleForSelection(index, activeIndexRef.current);
+        if (target !== record.target) {
+          record.target = target;
+          record.stillFrames = 0;
+          body.wakeUp();
+        }
+        if (body.sleepState === CANNON.Body.SLEEPING) continue;
         const error = Math.atan2(
           Math.sin(target - currentAngle(body)),
           Math.cos(target - currentAngle(body)),
         );
-        hinge.setMotorSpeed(THREE.MathUtils.clamp(error * 7, -3.2, 3.2));
-        body.wakeUp();
+        hinge.setMotorSpeed(Math.abs(error) < MOTOR_DEADBAND ? 0 : THREE.MathUtils.clamp(error * 7, -3.2, 3.2));
+        record.stillFrames = body.angularVelocity.length() < 0.04 ? record.stillFrames + 1 : 0;
+        if (record.stillFrames > SETTLE_FRAMES) body.sleep();
       }
     }
 
@@ -552,7 +616,7 @@ function RecordCrate({ projects, activeIndex, onOpen, pullTransition = false }: 
       activeRenderer.dispose();
       activeRenderer.domElement.remove();
     };
-  }, [projects]);
+  }, [crateRecords]);
 
   return (
     <div className="record-crate-stage" ref={mountRef}>

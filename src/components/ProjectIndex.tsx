@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { Project } from '../data/content-types';
 import { labelCode } from '../lib/labels';
+import { titleFitStyle } from '../lib/titleFit';
 import AmbientField, { DEFAULT_AMBIENCE } from './AmbientField';
 
 /** Projects page: the latest release gets the stage, the back catalogue sits below as a record wall. */
@@ -79,7 +80,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
               <span>latest release</span>
               <span>{labelCode(projects.length, 0)}</span>
             </div>
-            <h1 id="latest-release-title">{latest.title}</h1>
+            <h1 id="latest-release-title" style={titleFitStyle(latest.title)}>{latest.title}</h1>
             <p>{latest.summary}</p>
             <dl className="index-hero-facts">
               <div><dt>year</dt><dd>{latest.year}</dd></div>
