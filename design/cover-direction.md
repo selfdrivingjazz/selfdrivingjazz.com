@@ -1,37 +1,37 @@
 # Self-Driving Jazz — cover art direction
 
-Every project gets a square record-sleeve cover. The covers read as one catalogue
-from an institution that should not exist: an obscure 1960s–70s production-music
-library, typeset with Blue Note asymmetry, carrying one dry conceptual joke per
-release (MSCHF's thinking, never its look), with a little Designers Republic edge.
+Every project gets a square record-sleeve cover. Together the covers should feel
+like one strange catalogue: records from an institution that should not exist.
+The spirit comes from obscure production-music libraries, classic jazz-label
+sleeves, MSCHF's deadpan conceptual jokes and the Designers Republic. Treat these
+as **attitude, not templates**: never reproduce their recognisable layouts.
 
-The reference covers in `cover-references/` are the bar. Match their restraint.
+## What every cover needs
 
-## Each cover
+- **One idea.** A single strong visual concept that comes from what the project
+  actually is, committed to completely. Explainable in one sentence; surprising
+  on first look, obvious in hindsight.
+- **A real object.** It should look like a designed, printed sleeve made by a
+  person with taste and a point of view, not a generated image.
+- **Square 1:1.** The project title must appear, spelled exactly. Beyond that,
+  typography, scale and placement are free.
 
-- **One bold idea**, taken from what the project actually is, executed completely
-  and deadpan. The image should be explainable in one sentence.
-- **Square 1:1**, a printed sleeve: paper grain, slight offset misregistration,
-  subtle wear. Not a screen, not a mockup, not a photo of a record.
-- **Palette:** paper ivory + black + exactly one accent colour, *or* one deep
-  ground colour (navy, oxblood, olive…) with ivory and one accent. Vary the accent
-  between releases like a library's rotating catalogue colours.
-- **Typography:** the project title, lowercase, in a heavy neo-grotesk
-  (Helvetica/Akzidenz territory), set large and asymmetrically. Optionally a tiny
-  catalogue mark like `SDJ 014` in a corner. **No other text at all.**
-- **Image families** — pick one per cover:
-  - grainy, high-contrast monochrome photography with brutal crops;
-  - flat modernist geometry / screenprint shapes on a strict grid;
-  - technofuturist library illustration (dot-screen spheres, block cities,
-    diagrammatic machines).
+## Freedom
+
+Choose palette, typeface, medium and composition fresh for each candidate. Range
+widely; for example: photography, collage, cut paper, risograph, ink drawing,
+technical diagram, sculpture, found object, pure typography, op art, airbrush,
+Swiss poster, Polish poster, Japanese 70s design, scientific plate, packaging.
+Full-bleed colour, white space, black, photographs, total abstraction — all
+allowed. Candidates in one run must not look like variations of each other.
 
 ## Never
 
-- Affordance text of any kind: labels, captions, callouts, UI chrome, HUD
-  elements, warnings, status lines, confidence scores, bounding-box labels, fake
-  metadata, barcodes with numbers, slogans. This is the most common failure.
-- Chrome or neon gradients, generic cyberpunk, glowing AI brains, glitch effects,
-  vinyl-crackle nostalgia, random mid-century confetti shapes, glossy "AI art".
-- Imitating a specific real album cover, artist or brand.
-- Repeating one layout: candidates for the same project must differ in
-  composition, image family and accent colour, not just in details.
+- Affordance text: captions, labels, callouts, UI chrome, HUD elements, warnings,
+  status lines, confidence scores, fake metadata, slogans. The title, plus at most
+  a tiny catalogue mark, is the only text.
+- Generic AI-art looks: chrome or neon gradients, cyberpunk, glowing brains,
+  glitch effects, glossy 3D renders, vinyl-crackle nostalgia.
+- Copying any existing album cover, artist, brand or the reference covers.
+- The default "big title across the top, image block below, accent bar at the
+  bottom" library layout. Find another composition.

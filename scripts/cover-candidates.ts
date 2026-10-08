@@ -2,7 +2,7 @@
  * Generates record-cover candidates for a project with Codex image generation (billed to the
  * ChatGPT plan Codex is signed in with), then publishes them to MTS Outputs for review.
  *
- *   npm run covers -- <slug> [--count 3] [--direction "extra art direction"] [--no-publish]
+ *   npm run covers -- <slug> [--count 3] [--direction "extra art direction"] [--with-references] [--no-publish]
  *
  * <slug> is the slugified vault note title (e.g. "whoup"); the note does not need a cover yet.
  * Candidates and their concepts.json land in design/.candidates/<slug>/<run>/ (gitignored).
@@ -30,17 +30,20 @@ interface CoverRunOptions {
   slug: string;
   count: number;
   direction: string;
+  /** Attach design/cover-references/ images. Off by default: the model copies them too literally. */
+  withReferences: boolean;
   publish: boolean;
 }
 
 function parseArgs(argv: string[]): CoverRunOptions {
   const [slug, ...rest] = argv;
-  if (!slug || slug.startsWith('--')) throw new Error('usage: npm run covers -- <slug> [--count N] [--direction "..."] [--no-publish]');
-  const options: CoverRunOptions = { slug, count: 3, direction: '', publish: true };
+  if (!slug || slug.startsWith('--')) throw new Error('usage: npm run covers -- <slug> [--count N] [--direction "..."] [--with-references] [--no-publish]');
+  const options: CoverRunOptions = { slug, count: 3, direction: '', withReferences: false, publish: true };
   for (let index = 0; index < rest.length; index += 1) {
     const flag = rest[index];
     if (flag === '--count') options.count = Number(rest[++index]);
     else if (flag === '--direction') options.direction = rest[++index] ?? '';
+    else if (flag === '--with-references') options.withReferences = true;
     else if (flag === '--no-publish') options.publish = false;
     else throw new Error(`unknown option ${flag}`);
   }
@@ -73,11 +76,13 @@ function buildPrompt(options: CoverRunOptions, references: string[]): string {
   return [
     '$imagegen',
     `Create ${options.count} distinct record-cover candidates for a Self-Driving Jazz project, following the art direction below.`,
-    `The ${references.length} attached images are approved covers from the same catalogue: match their restraint and print quality, but do not copy their layouts.`,
+    references.length > 0
+      ? `The ${references.length} attached images are covers already in the catalogue. They show the level of taste expected, nothing more: do not reuse their layouts, palettes, type treatment or motifs.`
+      : '',
     '',
     fs.readFileSync(DIRECTION_PATH, 'utf8'),
     '## The project',
-    `- Title (set exactly, lowercase): "${note.title.toLowerCase()}"`,
+    `- Title (spelled exactly; case is your choice): "${note.title}"`,
     `- Catalogue mark (optional, tiny): "${catalogMark(data.catalog)}"`,
     data.summary ? `- Summary: ${String(data.summary)}` : '',
     data.tagline ? `- Tagline: ${String(data.tagline)}` : '',
@@ -89,7 +94,7 @@ function buildPrompt(options: CoverRunOptions, references: string[]): string {
     options.direction ? `\n## Extra direction for this run\n${options.direction}` : '',
     '',
     '## Deliverables',
-    `1. For each candidate, first decide its one-sentence concept from what the project is, then generate it. Make the ${options.count} candidates differ in concept, composition, image family and accent colour.`,
+    `1. For each candidate, first decide its one-sentence concept from what the project is, then generate it. The ${options.count} candidates must differ in concept, medium, palette, typography and composition. Take risks: at least one candidate should be unlike any typical record cover.`,
     `2. Save the images in the current directory as ${files.join(', ')}.`,
     '3. Write concepts.json in the current directory: a JSON array of {"file", "concept", "alt"} — concept is the one-sentence idea; alt is a plain description of the image for screen readers, at most 140 characters.',
     'Do not create or modify any other files.',
@@ -99,10 +104,12 @@ function buildPrompt(options: CoverRunOptions, references: string[]): string {
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const note = findNote(options.slug);
-  const references = fs.readdirSync(REFERENCES_DIR)
-    .filter((name) => /\.(png|jpe?g)$/i.test(name))
-    .sort()
-    .map((name) => path.join(REFERENCES_DIR, name));
+  const references = options.withReferences
+    ? fs.readdirSync(REFERENCES_DIR)
+      .filter((name) => /\.(png|jpe?g)$/i.test(name))
+      .sort()
+      .map((name) => path.join(REFERENCES_DIR, name))
+    : [];
   const run = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 13);
   const workDir = path.join(CANDIDATES_DIR, options.slug, run);
   fs.mkdirSync(workDir, { recursive: true });

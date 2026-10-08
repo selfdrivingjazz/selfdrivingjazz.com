@@ -37,10 +37,11 @@ npm run sync:vault
 ```
 
 `covers` runs `codex exec` with the built-in image tool (uses the ChatGPT plan
-Codex is signed in with), the brief in `design/cover-direction.md` and the
-approved covers in `design/cover-references/`, then publishes the candidates to
-MTS Outputs. `use-cover` copies the pick into the vault and updates the note.
-Add newly approved covers to `design/cover-references/` to steer future runs.
+Codex is signed in with) and the deliberately loose brief in
+`design/cover-direction.md`, then publishes the candidates to MTS Outputs.
+`--with-references` also attaches `design/cover-references/`; it is off by
+default because the model copies attached covers too literally. `use-cover`
+copies the pick into the vault and updates the note.
 
 ## Tailnet preview (MTS service `selfdrivingjazz`)
 
