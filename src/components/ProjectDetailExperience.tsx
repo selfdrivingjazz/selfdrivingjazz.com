@@ -85,7 +85,7 @@ export default async function ProjectDetailExperience({ project, projectIndex, p
                   <Image src={neighbour.coverUrl} width={240} height={240} sizes="72px" alt="" />
                 </span>
                 <span className="neighbour-copy">
-                  <span className="neighbour-meta">{direction} · {labelCode(projectCount, projectIndex + offset)}</span>
+                  <span className="neighbour-meta">{labelCode(projectCount, projectIndex + offset)}</span>
                   <span className="neighbour-title">{neighbour.title}</span>
                 </span>
               </Link>
