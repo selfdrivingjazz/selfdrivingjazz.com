@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import RecordCrate, { type CrateRecord } from '../RecordCrate';
+import RecordCrate, { type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
 import type { Project } from '../data/content-types';
 import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
@@ -41,6 +42,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const crateRef = useRef<RecordCrateHandle | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [pullTransition, setPullTransition] = useState(false);
 
@@ -144,21 +146,30 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
     document.documentElement.classList.remove('crate-scroll-active');
   }
 
-  const openStory = useCallback((index: number) => {
+  const advance = useCallback(() => {
+    sectionRefs.current[(activeIndex + 1) % stories.length]?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeIndex, stories.length]);
+
+  /** With the opt-in pull transition, the record leaves the crate before the project page opens. */
+  function openStory(event: ReactMouseEvent<HTMLAnchorElement>, index: number) {
     const { id, href } = stories[index];
     prepareToLeave(id);
-    router.push(href);
-  }, [stories, router]);
+    if (!pullTransition || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    const crate = crateRef.current;
+    if (crate) crate.pullOut(index, () => router.push(href));
+    else router.push(href);
+  }
 
   return (
     <main className="crate-prototype">
       <AmbientField ambience={ambience} />
       <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${stories[activeIndex].title}`}>
         <RecordCrate
+          ref={crateRef}
           records={records}
           activeIndex={activeIndex}
-          onOpen={openStory}
-          pullTransition={pullTransition}
+          onAdvance={advance}
         />
       </div>
 
@@ -179,7 +190,7 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
                 </div>
                 <Heading id={`${story.id}-title`} style={titleFitStyle(story.title)}>{story.title}</Heading>
                 <p>{story.summary}</p>
-                <Link href={story.href} onClick={() => prepareToLeave(story.id)}>
+                <Link href={story.href} onClick={(event) => openStory(event, index)}>
                   {story.cta} <span aria-hidden="true">↗</span>
                 </Link>
               </div>

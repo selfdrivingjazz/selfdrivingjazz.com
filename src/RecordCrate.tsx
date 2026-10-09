@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { type Ref, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import RecordCrateFallback from './RecordCrateFallback';
@@ -18,17 +18,24 @@ export type CrateRecord =
   }
   | { collage: string[]; title: string; label: string };
 
+/** Imperative controls for the parent. */
+export interface RecordCrateHandle {
+  /**
+   * Lifts the record at `index` out of the crate toward the camera, then calls `onDone`.
+   * Calls `onDone` immediately when motion is reduced or WebGL is unavailable.
+   */
+  pullOut: (index: number, onDone: () => void) => void;
+}
+
 interface RecordCrateProps {
   records: CrateRecord[];
   activeIndex: number;
-  /** Called when the front record is tapped/activated. */
-  onOpen: (index: number) => void;
-  /** Lift the record out of the crate toward the camera before calling `onOpen`. */
-  pullTransition?: boolean;
+  /** Called when the crate is tapped/activated: the parent moves to the next record. */
+  onAdvance: () => void;
+  ref?: Ref<RecordCrateHandle>;
 }
 
 interface PullAnimation {
-  index: number;
   mesh: THREE.Mesh;
   start: number;
   from: THREE.Vector3;
@@ -36,7 +43,7 @@ interface PullAnimation {
   to: THREE.Vector3;
   fromRotation: THREE.Quaternion;
   toRotation: THREE.Quaternion;
-  opened: boolean;
+  onDone: (() => void) | null;
 }
 
 interface PointerGesture {
@@ -117,16 +124,18 @@ function drawCollageSleeve(canvas: HTMLCanvasElement, record: { collage: string[
   document.fonts?.ready.then(drawLabel);
 }
 
-function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransition = false }: RecordCrateProps) {
+function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: RecordCrateProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const activeIndexRef = useRef(activeIndex);
-  const onOpenRef = useRef(onOpen);
-  const pullTransitionRef = useRef(pullTransition);
+  const onAdvanceRef = useRef(onAdvance);
+  const pullOutRef = useRef<RecordCrateHandle['pullOut'] | null>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   activeIndexRef.current = activeIndex;
-  onOpenRef.current = onOpen;
-  pullTransitionRef.current = pullTransition;
+  onAdvanceRef.current = onAdvance;
+  useImperativeHandle(ref, () => ({
+    pullOut: (index, onDone) => (pullOutRef.current ? pullOutRef.current(index, onDone) : onDone()),
+  }), []);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -164,7 +173,7 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
     activeRenderer.domElement.setAttribute('role', 'button');
     activeRenderer.domElement.setAttribute(
       'aria-label',
-      'Interactive three-dimensional crate of project records. Activate to open the front record; drag sideways to rotate.',
+      'Interactive three-dimensional crate of project records. Activate to flip to the next record; drag sideways to rotate.',
     );
     activeMount.append(activeRenderer.domElement);
 
@@ -499,11 +508,9 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function openActiveRecord() {
-      if (pull) return;
-      const index = activeIndexRef.current;
-      if (!pullTransitionRef.current || reducedMotion) {
-        onOpenRef.current(index);
+    function pullOut(index: number, onDone: () => void) {
+      if (pull || reducedMotion || !records[index]) {
+        onDone();
         return;
       }
       const { mesh } = records[index];
@@ -514,7 +521,6 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
       const limitingTangent = Math.min(tangent, tangent * camera.aspect);
       const distance = (SLEEVE_SIZE / 2) / (limitingTangent * 0.86);
       pull = {
-        index,
         mesh,
         start: performance.now(),
         from,
@@ -522,10 +528,11 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
         to: camera.position.clone().addScaledVector(forward, distance),
         fromRotation: mesh.quaternion.clone(),
         toRotation: camera.quaternion.clone(),
-        opened: false,
+        onDone,
       };
       activeRenderer.domElement.classList.add('is-pulling');
     }
+    pullOutRef.current = pullOut;
 
     function stepPull(now: number) {
       if (!pull) return;
@@ -539,9 +546,10 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
         .addScaledVector(pull.to, eased * eased);
       const turn = easeInOutCubic(THREE.MathUtils.clamp((t - 0.18) / 0.82, 0, 1));
       pull.mesh.quaternion.slerpQuaternions(pull.fromRotation, pull.toRotation, turn);
-      if (t === 1 && !pull.opened) {
-        pull.opened = true;
-        onOpenRef.current(pull.index);
+      if (t === 1 && pull.onDone) {
+        const { onDone } = pull;
+        pull.onDone = null;
+        onDone();
       }
     }
 
@@ -570,13 +578,13 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
 
     function finishPointerGesture(event: PointerEvent, cancelled = false) {
       if (!pointerGesture || event.pointerId !== pointerGesture.pointerId) return;
-      const shouldOpen = !cancelled && !pointerGesture.dragged;
+      const shouldAdvance = !cancelled && !pointerGesture.dragged;
       pointerGesture = undefined;
       activeRenderer.domElement.classList.remove('is-dragging');
       if (activeRenderer.domElement.hasPointerCapture(event.pointerId)) {
         activeRenderer.domElement.releasePointerCapture(event.pointerId);
       }
-      if (shouldOpen) openActiveRecord();
+      if (shouldAdvance) onAdvanceRef.current();
     }
 
     function handlePointerUp(event: PointerEvent) {
@@ -590,7 +598,7 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
     function handleKeyDown(event: KeyboardEvent) {
       if (event.repeat || (event.key !== 'Enter' && event.key !== ' ')) return;
       event.preventDefault();
-      openActiveRecord();
+      onAdvanceRef.current();
     }
 
     function handleContextLost(event: Event) {
@@ -637,6 +645,7 @@ function RecordCrate({ records: crateRecords, activeIndex, onOpen, pullTransitio
 
     return () => {
       disposed = true;
+      pullOutRef.current = null;
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
       activeRenderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
