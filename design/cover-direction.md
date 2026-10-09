@@ -26,11 +26,13 @@ dry joke hidden in plain sight.
 ## Series
 
 Each candidate is assigned one series. Work inside its idiom with a fresh
-composition — the series is a vocabulary, not a layout to copy.
+composition — the series is a vocabulary, not a layout to copy. Choose the
+palette for the idea: avoid defaulting to navy grounds, and never fall back on a
+grid of repeated photographs.
 
-### Photographic library sleeve
-Grainy black-and-white photograph — repeated, sequenced or brutally cropped —
-inset in a paper border with one flat colour block and a modest grotesk title.
+### Single photograph
+One grainy black-and-white photograph of one object, gesture or place, cropped
+with intent and given room on the paper; one flat ink block or rule beside it.
 
 ### Own-brand packaging
 1960s–70s supermarket own-label design: big flat fields of one bold colour and a
@@ -41,9 +43,10 @@ pack; the title small and plain, as if naming a product.
 Strict grid and pure geometric abstraction — shapes, rules and colour fields do
 the work; the title is a small, exact element placed on the grid.
 
-### Technofuturist library illustration
-Optimistic period future: dot-screen spheres, diagrammatic machines, block-built
-cities, flat cut shapes in three inks on a deep or pale ground.
+### Period future
+One optimistic 1960s vision of the future, drawn as a single diagrammatic
+object or scene in flat cut shapes and halftone, on a light, warm or vivid
+ground.
 
 ### Pelican cover
 Small photographic or engraved cut-out collaged into flat colour areas with a
@@ -52,6 +55,26 @@ witty juxtaposition; a small, quietly placed title.
 ### Op-art pattern
 A single systematic pattern (lines, dots, modules) that bends, breaks or repeats
 to embody the idea; title small and precise.
+
+### Scientific plate
+An engraved or lithographed specimen illustration — botanical, anatomical,
+mechanical — of the idea as if it were a natural object, on plain paper.
+
+### Cut paper
+Torn and cut coloured paper shapes, Matisse-flat or children's-book bold,
+arranged into one clear image with visible paper edges.
+
+### Technical drawing
+Line-only engineering or architectural drawing — section, exploded view,
+isometric — in one ink, with one area filled in a second colour.
+
+### Typographic sculpture
+The image made from letterforms or punctuation themselves (not the title):
+large type set as shape, texture or pattern in two inks.
+
+### Ink and brush
+Loose single-colour brush drawing or sumi-like ink wash, one confident gesture
+carrying the idea, lots of untouched paper.
 
 ## Never
 

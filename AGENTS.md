@@ -1,7 +1,8 @@
 # selfdrivingjazz.com
 
 Next.js site. Project content is **generated from the Obsidian vault**; never
-hand-edit `content/projects/`, `public/project-covers/` or `public/project-media/`.
+hand-edit `content/projects/`, `content/older-works.json`,
+`public/project-covers/` or `public/project-media/`.
 
 ## Content: Obsidian vault → site
 
@@ -15,7 +16,7 @@ title is the filename without the leading emoji. Site frontmatter fields:
 | `summary`, `status` | one-line summary, project status |
 | `year`, `genre`, `artist`, `url` | year, format, collaborators, outbound link |
 | `cover`, `cover-alt` | `"[[attachment]]"` in `nobody/attachments/` + alt text |
-| `back-cover`, `back-cover-alt` | optional flip-side art |
+| `back-cover`, `back-cover-alt` | optional flip side: detail-page flip and the crate sleeve's reverse |
 | `ambience` | optional three hex colours for the background |
 
 The note body is the write-up: H1 lines are dropped, `![[image]]` embeds are
@@ -27,15 +28,17 @@ npm run sync:vault    # regenerate content + images from the vault; commit the r
 ```
 
 The sync fails loudly on missing fields or duplicate catalogue numbers. It also
-requires `nobody/attachments/sdj-cover-older-works.<png|jpg|webp>`: the crate's
-"older works" sleeve standing in for releases beyond the newest seven.
+requires `nobody/attachments/sdj-cover-older-works.<png|jpg|webp>` (optional
+`sdj-cover-older-works-back.*`): the crate's "older works" sleeve standing in for
+releases beyond the newest seven. Image filenames carry a content hash, so a
+replaced image always gets a new URL.
 
 ## Covers: Codex image generation → vault
 
 ```sh
 npm run covers -- <slug> [--count 3] [--direction "…"]   # front cover
 npm run covers -- <slug> --back                          # reverse of the note's current cover
-npm run covers -- older-works                            # the crate's back-catalogue sleeve
+npm run covers -- older-works [--back]                   # the crate's back-catalogue sleeve
 npm run use-cover -- <slug|older-works> design/.candidates/<…>/<run>/candidate-N.png [--back]
 npm run sync:vault
 ```

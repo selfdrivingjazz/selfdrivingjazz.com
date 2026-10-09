@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import RecordCrate, { type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
-import type { Project } from '../data/content-types';
+import type { OlderWorksSleeve, Project } from '../data/content-types';
 import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
@@ -39,8 +39,7 @@ function readPullTransitionPreference(): boolean {
 
 interface CrateScrollExperienceProps {
   projects: Project[];
-  /** Sleeve standing in for every release older than the crate's featured ones. */
-  olderWorks: { coverUrl: string; coverColor: string };
+  olderWorks: OlderWorksSleeve;
 }
 
 export default function CrateScrollExperience({ projects, olderWorks }: CrateScrollExperienceProps) {
@@ -67,6 +66,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
     const recordList: CrateRecord[] = featured.map((project) => ({
       cover: optimizedImageUrl(project.recordCover, 828),
       fallbackCover: project.recordCover,
+      backCover: project.backCoverUrl ? optimizedImageUrl(project.backCoverUrl, 828) : undefined,
       color: project.coverColor,
     }));
     if (older.length > 0) {
@@ -85,6 +85,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
       recordList.push({
         cover: optimizedImageUrl(olderWorks.coverUrl, 828),
         fallbackCover: olderWorks.coverUrl,
+        backCover: olderWorks.backCoverUrl ? optimizedImageUrl(olderWorks.backCoverUrl, 828) : undefined,
         color: olderWorks.coverColor,
       });
     }

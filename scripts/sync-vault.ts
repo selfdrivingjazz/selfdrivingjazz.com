@@ -5,9 +5,11 @@
  *   SDJ_VAULT=/path/to/vault npm run sync:vault
  *
  * Source: every note in `nobody/publish/project/` with `publish: true`.
- * Output (fully regenerated, commit it): `content/projects/*.mdx`,
- * `public/project-covers/<slug>.{webp,png}` and `public/project-media/<slug>/*`.
+ * Output (fully regenerated, commit it): `content/projects/*.mdx`, `content/older-works.json`,
+ * `public/project-covers/<name>-<hash>.{webp,png}` and `public/project-media/<slug>/*`.
+ * Image filenames carry a content hash so replacing an image always changes its URL.
  */
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -17,6 +19,7 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content', 'projects');
 const COVERS_DIR = path.join(ROOT, 'public', 'project-covers');
 const MEDIA_DIR = path.join(ROOT, 'public', 'project-media');
+const OLDER_WORKS_MANIFEST = path.join(ROOT, 'content', 'older-works.json');
 
 const COVER_SIZE = 1024;
 const MEDIA_MAX_WIDTH = 1600;
@@ -45,13 +48,19 @@ function publishedNotes(): VaultNote[] {
   return notes;
 }
 
-async function writeCover(source: string, slug: string, suffix = ''): Promise<string> {
-  const base = path.join(COVERS_DIR, `${slug}${suffix}`);
+/** Short content hash, so a changed image always gets a new URL (no stale browser or optimizer cache). */
+function contentHash(file: string): string {
+  return createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 10);
+}
+
+/** Writes `<name>-<hash>.{webp,png}` and returns the public base path without extension. */
+async function writeCover(source: string, name: string): Promise<string> {
+  const fileBase = `${name}-${contentHash(source)}`;
   const image = sharp(source).resize(COVER_SIZE, COVER_SIZE, { fit: 'cover' });
-  await image.clone().webp({ quality: 88 }).toFile(`${base}.webp`);
+  await image.clone().webp({ quality: 88 }).toFile(path.join(COVERS_DIR, `${fileBase}.webp`));
   // PNG copy: the Open Graph renderer cannot decode WebP.
-  await image.clone().png({ compressionLevel: 9 }).toFile(`${base}.png`);
-  return `/project-covers/${slug}${suffix}`;
+  await image.clone().png({ compressionLevel: 9 }).toFile(path.join(COVERS_DIR, `${fileBase}.png`));
+  return `/project-covers/${fileBase}`;
 }
 
 /** Converts Obsidian markdown to plain markdown, copying embedded images into public/. */
@@ -65,8 +74,9 @@ async function convertBody(note: VaultNote, titlesToSlugs: Map<string, string>):
     if (embeds.has(match[0]) || !/\.(png|jpe?g|webp|gif|avif)$/i.test(name)) continue;
     imageIndex += 1;
     fs.mkdirSync(mediaDir, { recursive: true });
-    const fileName = `${String(imageIndex).padStart(2, '0')}.webp`;
-    await sharp(attachmentPath(name, notePath))
+    const source = attachmentPath(name, notePath);
+    const fileName = `${String(imageIndex).padStart(2, '0')}-${contentHash(source)}.webp`;
+    await sharp(source)
       .rotate()
       .resize({ width: MEDIA_MAX_WIDTH, withoutEnlargement: true })
       .webp({ quality: 82 })
@@ -111,15 +121,19 @@ async function main() {
 
   const keepContent = new Set<string>();
   const keepCovers = new Set<string>();
+  const keepCover = (base: string | undefined) => {
+    if (!base) return;
+    keepCovers.add(`${path.basename(base)}.webp`);
+    keepCovers.add(`${path.basename(base)}.png`);
+  };
   for (const note of notes) {
     const { data, notePath } = note;
     const cover = await writeCover(attachmentPath(wikiTarget(String(data.cover)), notePath), note.slug);
     const backCover = data['back-cover']
-      ? await writeCover(attachmentPath(wikiTarget(String(data['back-cover'])), notePath), note.slug, '-back')
+      ? await writeCover(attachmentPath(wikiTarget(String(data['back-cover'])), notePath), `${note.slug}-back`)
       : undefined;
-    for (const file of [cover, backCover].filter(Boolean).flatMap((base) => [`${path.basename(String(base))}.webp`, `${path.basename(String(base))}.png`])) {
-      keepCovers.add(file);
-    }
+    keepCover(cover);
+    keepCover(backCover);
 
     const fields = {
       catalog: Number(data.catalog),
@@ -144,15 +158,24 @@ async function main() {
     keepContent.add(fileName);
   }
 
-  // The crate's back-catalogue sleeve belongs to no note: one attachment with a fixed name.
-  const olderWorks = fs.readdirSync(ATTACHMENTS_DIR)
-    .find((name) => path.parse(name).name === OLDER_WORKS_COVER && /\.(png|jpe?g|webp)$/i.test(name));
+  // The crate's back-catalogue sleeve belongs to no note: fixed attachment names, the back optional.
+  // Its hashed URLs go into a small manifest the homepage reads.
+  const findAttachment = (baseName: string) => fs.readdirSync(ATTACHMENTS_DIR)
+    .find((name) => path.parse(name).name === baseName && /\.(png|jpe?g|webp)$/i.test(name));
+  const olderWorks = findAttachment(OLDER_WORKS_COVER);
   if (!olderWorks) {
     throw new Error(`missing the older-works sleeve ${OLDER_WORKS_COVER}.<png|jpg|webp> in ${ATTACHMENTS_DIR} (npm run covers -- older-works)`);
   }
-  await writeCover(path.join(ATTACHMENTS_DIR, olderWorks), 'older-works');
-  keepCovers.add('older-works.webp');
-  keepCovers.add('older-works.png');
+  const olderWorksBack = findAttachment(`${OLDER_WORKS_COVER}-back`);
+  const olderWorksCover = await writeCover(path.join(ATTACHMENTS_DIR, olderWorks), 'older-works');
+  const olderWorksBackCover = olderWorksBack
+    ? await writeCover(path.join(ATTACHMENTS_DIR, olderWorksBack), 'older-works-back')
+    : undefined;
+  for (const base of [olderWorksCover, olderWorksBackCover]) keepCover(base);
+  fs.writeFileSync(OLDER_WORKS_MANIFEST, `${JSON.stringify({
+    coverUrl: `${olderWorksCover}.webp`,
+    backCoverUrl: olderWorksBackCover ? `${olderWorksBackCover}.webp` : undefined,
+  }, null, 2)}\n`);
 
   removeStale(CONTENT_DIR, keepContent);
   removeStale(COVERS_DIR, keepCovers);

@@ -61,21 +61,22 @@ function copyIntoVault(image: string, baseName: string): string {
   return fileName;
 }
 
-function useOlderWorks(image: string) {
-  // The sync reads exactly one file named OLDER_WORKS_COVER.<ext>; replace it outright.
+function useOlderWorks(image: string, back: boolean) {
+  // The sync reads exactly one file per side named <basename>.<ext>; replace it outright.
+  const baseName = back ? `${OLDER_WORKS_COVER}-back` : OLDER_WORKS_COVER;
   for (const name of fs.readdirSync(ATTACHMENTS_DIR)) {
-    if (path.parse(name).name === OLDER_WORKS_COVER) fs.rmSync(path.join(ATTACHMENTS_DIR, name));
+    if (path.parse(name).name === baseName) fs.rmSync(path.join(ATTACHMENTS_DIR, name));
   }
-  const fileName = `${OLDER_WORKS_COVER}${path.extname(image).toLowerCase()}`;
+  const fileName = `${baseName}${path.extname(image).toLowerCase()}`;
   fs.copyFileSync(image, path.join(ATTACHMENTS_DIR, fileName));
-  console.log(`Older works sleeve → ${fileName}\nNext: npm run sync:vault, review locally, commit, then redeploy the tailnet preview.`);
+  console.log(`Older works ${back ? 'back' : 'sleeve'} → ${fileName}\nNext: npm run sync:vault, review locally, commit, then redeploy the tailnet preview.`);
 }
 
 function main() {
   const { slug, image, back, alt: altArg } = parseArgs(process.argv.slice(2));
   if (!fs.existsSync(image)) throw new Error(`no such image: ${image}`);
   if (slug === 'older-works') {
-    useOlderWorks(image);
+    useOlderWorks(image, back);
     return;
   }
 

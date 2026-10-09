@@ -22,3 +22,10 @@ export interface Project {
   coverColor: string;
   content?: string;
 }
+
+/** The crate's "older works" sleeve, standing in for releases beyond the featured ones. */
+export interface OlderWorksSleeve {
+  coverUrl: string;
+  coverColor: string;
+  backCoverUrl?: string;
+}

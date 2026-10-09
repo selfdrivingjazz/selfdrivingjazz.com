@@ -12,6 +12,8 @@ export interface CrateRecord {
   cover: string;
   /** Tried if `cover` fails to load. */
   fallbackCover: string;
+  /** Reverse of the sleeve, seen once the record is flipped forward; the cover is reused when absent. */
+  backCover?: string;
   /** Shown on the sleeve until the cover texture arrives. */
   color: string;
 }
@@ -289,15 +291,22 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
       });
       materials.add(coverMaterial);
       materials.add(edgeMaterial);
+      const backMaterial = record.backCover ? coverMaterial.clone() : coverMaterial;
+      materials.add(backMaterial);
 
-      function applyTexture(texture: THREE.Texture) {
+      function prepareTexture(texture: THREE.Texture): boolean {
         if (disposed) {
           texture.dispose();
-          return;
+          return false;
         }
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.anisotropy = Math.min(8, activeRenderer.capabilities.getMaxAnisotropy());
         textures.push(texture);
+        return true;
+      }
+
+      function applyCover(texture: THREE.Texture) {
+        if (!prepareTexture(texture)) return;
         coverMaterial.map = texture;
         coverMaterial.color.set(0xd8d8d8);
         edgeMaterial.map = texture;
@@ -306,17 +315,26 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
         edgeMaterial.needsUpdate = true;
       }
 
-      textureLoader.load(record.cover, applyTexture, undefined, () => {
-        textureLoader.load(record.fallbackCover, applyTexture);
+      textureLoader.load(record.cover, applyCover, undefined, () => {
+        textureLoader.load(record.fallbackCover, applyCover);
       });
+      if (record.backCover) {
+        textureLoader.load(record.backCover, (texture) => {
+          if (!prepareTexture(texture)) return;
+          backMaterial.map = texture;
+          backMaterial.color.set(0xd8d8d8);
+          backMaterial.needsUpdate = true;
+        });
+      }
 
+      // BoxGeometry material order: +x, -x, +y, -y, +z (front), -z (back).
       const mesh = new THREE.Mesh(sleeveGeometry, [
         edgeMaterial,
         edgeMaterial,
         edgeMaterial,
         edgeMaterial,
         coverMaterial,
-        coverMaterial,
+        backMaterial,
       ]);
       mesh.castShadow = true;
       mesh.receiveShadow = true;

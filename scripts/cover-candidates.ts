@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CRATE_RELEASES } from '../src/lib/crate.ts';
-import { ATTACHMENTS_DIR, findNote, readNotes, type VaultNote, wikiTarget } from './vault.ts';
+import { ATTACHMENTS_DIR, findNote, OLDER_WORKS_COVER, readNotes, type VaultNote, wikiTarget } from './vault.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DIRECTION_PATH = path.join(ROOT, 'design', 'cover-direction.md');
@@ -67,7 +67,6 @@ function parseArgs(argv: string[]): CoverRunOptions {
     else throw new Error(`unknown option ${flag}\n${USAGE}`);
   }
   if (!Number.isInteger(options.count) || options.count < 1 || options.count > 6) throw new Error('--count must be 1–6');
-  if (options.back && options.slug === OLDER_WORKS) throw new Error('--back applies to project notes only');
   return options;
 }
 
@@ -89,6 +88,16 @@ function catalogMark(catalog: unknown): string {
   return `SDJ ${String(number).padStart(3, '0')}`;
 }
 
+const BACK_BRIEF = [
+  '',
+  '## Back cover',
+  'Design the BACK of this sleeve. The first attached image is its approved front cover.',
+  'The back belongs to the same printed object: same paper, inks, palette and visual language, but a',
+  'different composition that extends the front\'s idea — the pattern continued or reversed, the motif',
+  'seen from another angle, a detail enlarged, the scene a moment later. It must read as the reverse,',
+  'not a copy. Keep it calmer than the front. Text: at most the title and catalogue mark, small.',
+];
+
 function projectSubject(note: VaultNote, back: boolean): CoverSubject {
   const { data } = note;
   const brief = [
@@ -106,38 +115,29 @@ function projectSubject(note: VaultNote, back: boolean): CoverSubject {
   if (!data.cover) throw new Error(`${note.title} has no cover yet; pick the front before designing the back`);
   const front = path.join(ATTACHMENTS_DIR, wikiTarget(String(data.cover)));
   if (!fs.existsSync(front)) throw new Error(`front cover not found: ${front}`);
-  brief.push(
-    '',
-    '## Back cover',
-    'Design the BACK of this sleeve. The first attached image is its approved front cover.',
-    'The back belongs to the same printed object: same paper, inks, palette and visual language, but a',
-    'different composition that extends the front\'s idea — the pattern continued or reversed, the motif',
-    'seen from another angle, a detail enlarged, the scene a moment later. It must read as the reverse,',
-    'not a copy. Keep it calmer than the front. Text: at most the title and catalogue mark, small.',
-  );
-  return { title: note.title, catalogMark: catalogMark(data.catalog), brief, inputs: [front] };
+  return { title: note.title, catalogMark: catalogMark(data.catalog), brief: [...brief, ...BACK_BRIEF], inputs: [front] };
 }
 
 /** The sleeve at the back of the crate standing in for every release not shown individually. */
-function olderWorksSubject(): CoverSubject {
+function olderWorksSubject(back: boolean): CoverSubject {
   const published = readNotes()
     .filter((note) => note.data.publish === true)
     .sort((left, right) => Number(right.data.catalog) - Number(left.data.catalog));
   const older = published.slice(CRATE_RELEASES);
   if (older.length === 0) throw new Error('no older releases: every project has its own sleeve in the crate');
-  return {
-    title: 'Older Works',
-    catalogMark: null,
-    brief: [
-      '## The sleeve',
-      'This is not one project: it is the compilation sleeve at the back of the record crate that holds the',
-      'catalogue\'s older releases — an archive, an anthology, the back catalogue. Its idea should be about',
-      'accumulation, archive, time or the catalogue itself rather than any single release.',
-      'The releases it collects, for context only (do not depict or name them):',
-      ...older.map((note) => `- ${note.title} (${String(note.data.year)}): ${String(note.data.summary)}`),
-    ],
-    inputs: [],
-  };
+  const brief = [
+    '## The sleeve',
+    'This is not one project: it is the compilation sleeve at the back of the record crate that holds the',
+    'catalogue\'s older releases — an archive, an anthology, the back catalogue. Its idea should be about',
+    'accumulation, archive, time or the catalogue itself rather than any single release.',
+    'The releases it collects, for context only (do not depict or name them):',
+    ...older.map((note) => `- ${note.title} (${String(note.data.year)}): ${String(note.data.summary)}`),
+  ];
+  if (!back) return { title: 'Older Works', catalogMark: null, brief, inputs: [] };
+
+  const front = fs.readdirSync(ATTACHMENTS_DIR).find((name) => path.parse(name).name === OLDER_WORKS_COVER);
+  if (!front) throw new Error(`no older-works front yet (${OLDER_WORKS_COVER}.*); pick it before designing the back`);
+  return { title: 'Older Works', catalogMark: null, brief: [...brief, ...BACK_BRIEF], inputs: [path.join(ATTACHMENTS_DIR, front)] };
 }
 
 /** The `### ` headings under `## Series` in the art direction. */
@@ -188,7 +188,7 @@ function buildPrompt(options: CoverRunOptions, subject: CoverSubject, references
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const subject = options.slug === OLDER_WORKS ? olderWorksSubject() : projectSubject(findNote(options.slug), options.back);
+  const subject = options.slug === OLDER_WORKS ? olderWorksSubject(options.back) : projectSubject(findNote(options.slug), options.back);
   const references = options.withReferences
     ? fs.readdirSync(REFERENCES_DIR)
       .filter((name) => /\.(png|jpe?g)$/i.test(name))

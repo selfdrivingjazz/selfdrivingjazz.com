@@ -3,7 +3,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import sharp from 'sharp';
 
-import type { Project } from '../data/content-types';
+import type { OlderWorksSleeve, Project } from '../data/content-types';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 const PROJECTS_ROOT = path.join(CONTENT_ROOT, 'projects');
@@ -89,11 +89,12 @@ export async function getProject(slug: string): Promise<Project | undefined> {
   return readProject(filename, true);
 }
 
-/** Written by `npm run sync:vault` from the vault's sdj-cover-older-works attachment. */
-export const OLDER_WORKS_COVER_URL = '/project-covers/older-works.webp';
+/** Written by `npm run sync:vault` from the vault's sdj-cover-older-works[-back] attachments. */
+const OLDER_WORKS_MANIFEST = path.join(CONTENT_ROOT, 'older-works.json');
 
-/** The crate's back-catalogue sleeve: image URL plus its average colour for the loading state. */
-export async function getOlderWorksSleeve(): Promise<{ coverUrl: string; coverColor: string }> {
-  const { coverColor } = await coverColors(OLDER_WORKS_COVER_URL);
-  return { coverUrl: OLDER_WORKS_COVER_URL, coverColor };
+/** The crate's back-catalogue sleeve: image URLs plus the front's average colour for the loading state. */
+export async function getOlderWorksSleeve(): Promise<OlderWorksSleeve> {
+  const { coverUrl, backCoverUrl } = JSON.parse(fs.readFileSync(OLDER_WORKS_MANIFEST, 'utf8')) as Omit<OlderWorksSleeve, 'coverColor'>;
+  const { coverColor } = await coverColors(coverUrl);
+  return { coverUrl, coverColor, backCoverUrl };
 }
