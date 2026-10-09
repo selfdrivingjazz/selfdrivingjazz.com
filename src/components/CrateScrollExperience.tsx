@@ -37,7 +37,13 @@ function readPullTransitionPreference(): boolean {
   return window.localStorage.getItem(PULL_TRANSITION_KEY) === '1';
 }
 
-export default function CrateScrollExperience({ projects }: { projects: Project[] }) {
+interface CrateScrollExperienceProps {
+  projects: Project[];
+  /** Sleeve standing in for every release older than the crate's featured ones. */
+  olderWorks: { coverUrl: string; coverColor: string };
+}
+
+export default function CrateScrollExperience({ projects, olderWorks }: CrateScrollExperienceProps) {
   const router = useRouter();
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
@@ -76,10 +82,14 @@ export default function CrateScrollExperience({ projects }: { projects: Project[
         cta: 'browse the catalogue',
         ambience: DEFAULT_AMBIENCE,
       });
-      recordList.push({ collage: older.map((project) => optimizedImageUrl(project.coverUrl, 384)), title: 'older works', label: range });
+      recordList.push({
+        cover: optimizedImageUrl(olderWorks.coverUrl, 828),
+        fallbackCover: olderWorks.coverUrl,
+        color: olderWorks.coverColor,
+      });
     }
     return { stories: storyList, records: recordList };
-  }, [projects]);
+  }, [projects, olderWorks]);
   const ambience = stories[activeIndex].ambience;
 
   useEffect(() => {

@@ -26,15 +26,22 @@ become text (or links to other project pages).
 npm run sync:vault    # regenerate content + images from the vault; commit the result
 ```
 
-The sync fails loudly on missing fields or duplicate catalogue numbers.
+The sync fails loudly on missing fields or duplicate catalogue numbers. It also
+requires `nobody/attachments/sdj-cover-older-works.<png|jpg|webp>`: the crate's
+"older works" sleeve standing in for releases beyond the newest seven.
 
 ## Covers: Codex image generation → vault
 
 ```sh
-npm run covers -- <slug> [--count 3] [--direction "…"]   # ≈80s per image
-npm run use-cover -- <slug> design/.candidates/<slug>/<run>/candidate-N.png
+npm run covers -- <slug> [--count 3] [--direction "…"]   # front cover
+npm run covers -- <slug> --back                          # reverse of the note's current cover
+npm run covers -- older-works                            # the crate's back-catalogue sleeve
+npm run use-cover -- <slug|older-works> design/.candidates/<…>/<run>/candidate-N.png [--back]
 npm run sync:vault
 ```
+
+Generation takes about a minute per image, longer with parallel runs: give
+agent shells a timeout of 10+ minutes for a 3–4 image run.
 
 `covers` runs `codex exec` with the built-in image tool (uses the ChatGPT plan
 Codex is signed in with) and the brief in `design/cover-direction.md`: fixed

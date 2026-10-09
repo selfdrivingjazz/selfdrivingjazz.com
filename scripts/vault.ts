@@ -6,6 +6,8 @@ import matter from 'gray-matter';
 export const VAULT = process.env.SDJ_VAULT ?? '/home/jmill/sdj/nhx4b';
 export const NOTES_DIR = path.join(VAULT, 'nobody', 'publish', 'project');
 export const ATTACHMENTS_DIR = path.join(VAULT, 'nobody', 'attachments');
+/** Attachment basename (any image extension) of the crate's "older works" sleeve; not tied to a note. */
+export const OLDER_WORKS_COVER = 'sdj-cover-older-works';
 
 export interface VaultNote {
   title: string;

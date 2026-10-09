@@ -7,16 +7,14 @@ import RecordCrateFallback from './RecordCrateFallback';
 
 type Vector3Tuple = [number, number, number];
 
-/** A sleeve in the crate: either a cover image, or a generated collage sleeve (e.g. "older works"). */
-export type CrateRecord =
-  | {
-    cover: string;
-    /** Tried if `cover` fails to load. */
-    fallbackCover: string;
-    /** Shown on the sleeve until the cover texture arrives. */
-    color: string;
-  }
-  | { collage: string[]; title: string; label: string };
+/** A sleeve in the crate. */
+export interface CrateRecord {
+  cover: string;
+  /** Tried if `cover` fails to load. */
+  fallbackCover: string;
+  /** Shown on the sleeve until the cover texture arrives. */
+  color: string;
+}
 
 /** Imperative controls for the parent. */
 export interface RecordCrateHandle {
@@ -84,45 +82,6 @@ function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
-
-function drawCollageSleeve(canvas: HTMLCanvasElement, record: { collage: string[]; title: string; label: string }, onChange: () => void) {
-  const context = canvas.getContext('2d');
-  if (!context) return;
-  const size = canvas.width;
-  const tile = size / 3;
-  context.fillStyle = '#0b0c0c';
-  context.fillRect(0, 0, size, size);
-  const slots = [0, 1, 2, 3, 5, 6, 7, 8];
-  record.collage.slice(0, slots.length).forEach((src, index) => {
-    const image = new Image();
-    image.onload = () => {
-      const slot = slots[index];
-      context.globalAlpha = 0.78;
-      context.drawImage(image, (slot % 3) * tile, Math.floor(slot / 3) * tile, tile, tile);
-      context.globalAlpha = 1;
-      onChange();
-    };
-    image.src = src;
-  });
-  const drawLabel = () => {
-    const fontFamily = getComputedStyle(document.body).fontFamily;
-    context.fillStyle = '#0b0c0c';
-    context.fillRect(tile, tile, tile, tile);
-    context.fillStyle = '#f0f0ed';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    const [first, ...rest] = record.title.split(' ');
-    context.font = `600 ${Math.round(tile * 0.2)}px ${fontFamily}`;
-    context.fillText(first, size / 2, tile * 1.38);
-    context.fillText(rest.join(' '), size / 2, tile * 1.58);
-    context.fillStyle = '#95958f';
-    context.font = `500 ${Math.round(tile * 0.07)}px ${fontFamily}`;
-    context.fillText(record.label, size / 2, tile * 1.8);
-    onChange();
-  };
-  drawLabel();
-  document.fonts?.ready.then(drawLabel);
-}
 
 function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: RecordCrateProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
@@ -319,12 +278,12 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
     const records = crateRecords.map((record, index) => {
       // Sleeves render in their cover's average colour until the texture arrives.
       const coverMaterial = new THREE.MeshStandardMaterial({
-        color: 'cover' in record ? record.color : 0x0b0c0c,
+        color: record.color,
         roughness: 0.9,
         metalness: 0,
       });
       const edgeMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color('cover' in record ? record.color : 0x0b0c0c).multiplyScalar(0.7),
+        color: new THREE.Color(record.color).multiplyScalar(0.7),
         roughness: 0.95,
         metalness: 0,
       });
@@ -347,18 +306,9 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
         edgeMaterial.needsUpdate = true;
       }
 
-      if ('cover' in record) {
-        textureLoader.load(record.cover, applyTexture, undefined, () => {
-          textureLoader.load(record.fallbackCover, applyTexture);
-        });
-      } else {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 1024;
-        const canvasTexture = new THREE.CanvasTexture(canvas);
-        drawCollageSleeve(canvas, record, () => { canvasTexture.needsUpdate = true; });
-        applyTexture(canvasTexture);
-      }
+      textureLoader.load(record.cover, applyTexture, undefined, () => {
+        textureLoader.load(record.fallbackCover, applyTexture);
+      });
 
       const mesh = new THREE.Mesh(sleeveGeometry, [
         edgeMaterial,

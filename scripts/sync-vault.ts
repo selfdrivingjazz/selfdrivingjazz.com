@@ -11,7 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
-import { ATTACHMENTS_DIR, NOTES_DIR, noteTitle, readNotes, type VaultNote, wikiTarget } from './vault.ts';
+import { ATTACHMENTS_DIR, NOTES_DIR, noteTitle, OLDER_WORKS_COVER, readNotes, type VaultNote, wikiTarget } from './vault.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CONTENT_DIR = path.join(ROOT, 'content', 'projects');
@@ -143,6 +143,16 @@ async function main() {
     fs.writeFileSync(path.join(CONTENT_DIR, fileName), `${frontmatter(fields)}\n${await convertBody(note, titlesToSlugs)}\n`);
     keepContent.add(fileName);
   }
+
+  // The crate's back-catalogue sleeve belongs to no note: one attachment with a fixed name.
+  const olderWorks = fs.readdirSync(ATTACHMENTS_DIR)
+    .find((name) => path.parse(name).name === OLDER_WORKS_COVER && /\.(png|jpe?g|webp)$/i.test(name));
+  if (!olderWorks) {
+    throw new Error(`missing the older-works sleeve ${OLDER_WORKS_COVER}.<png|jpg|webp> in ${ATTACHMENTS_DIR} (npm run covers -- older-works)`);
+  }
+  await writeCover(path.join(ATTACHMENTS_DIR, olderWorks), 'older-works');
+  keepCovers.add('older-works.webp');
+  keepCovers.add('older-works.png');
 
   removeStale(CONTENT_DIR, keepContent);
   removeStale(COVERS_DIR, keepCovers);

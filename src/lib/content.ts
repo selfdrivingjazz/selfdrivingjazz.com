@@ -88,3 +88,12 @@ export async function getProject(slug: string): Promise<Project | undefined> {
   if (!fs.existsSync(path.join(PROJECTS_ROOT, filename))) return undefined;
   return readProject(filename, true);
 }
+
+/** Written by `npm run sync:vault` from the vault's sdj-cover-older-works attachment. */
+export const OLDER_WORKS_COVER_URL = '/project-covers/older-works.webp';
+
+/** The crate's back-catalogue sleeve: image URL plus its average colour for the loading state. */
+export async function getOlderWorksSleeve(): Promise<{ coverUrl: string; coverColor: string }> {
+  const { coverColor } = await coverColors(OLDER_WORKS_COVER_URL);
+  return { coverUrl: OLDER_WORKS_COVER_URL, coverColor };
+}
