@@ -7,12 +7,14 @@
  * Source: every note in `nobody/publish/project/` with `publish: true`.
  * Output (fully regenerated, commit it): `content/projects/*.mdx`, `content/older-works.json`,
  * `public/project-covers/<name>-<hash>.{webp,png}` and `public/project-media/<slug>/*`.
- * Image filenames carry a content hash so replacing an image always changes its URL.
+ * Image filenames carry a content hash so replacing an image always changes its URL. Cover colours (ambience
+ * palettes, placeholder, average colour) are computed here from the artwork, so the site never decodes images.
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { type CoverColors, coverColors } from './cover-palette.ts';
 import { ATTACHMENTS_DIR, NOTES_DIR, noteTitle, OLDER_WORKS_COVER, readNotes, type VaultNote, wikiTarget } from './vault.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -53,14 +55,14 @@ function contentHash(file: string): string {
   return createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 10);
 }
 
-/** Writes `<name>-<hash>.{webp,png}` and returns the public base path without extension. */
-async function writeCover(source: string, name: string): Promise<string> {
+/** Writes `<name>-<hash>.{webp,png}`; returns the public base path without extension and the cover's colours. */
+async function writeCover(source: string, name: string): Promise<CoverColors & { base: string }> {
   const fileBase = `${name}-${contentHash(source)}`;
   const image = sharp(source).resize(COVER_SIZE, COVER_SIZE, { fit: 'cover' });
   await image.clone().webp({ quality: 88 }).toFile(path.join(COVERS_DIR, `${fileBase}.webp`));
   // PNG copy: the Open Graph renderer cannot decode WebP.
   await image.clone().png({ compressionLevel: 9 }).toFile(path.join(COVERS_DIR, `${fileBase}.png`));
-  return `/project-covers/${fileBase}`;
+  return { base: `/project-covers/${fileBase}`, ...await coverColors(source) };
 }
 
 /** Converts Obsidian markdown to plain markdown, copying embedded images into public/. */
@@ -132,8 +134,8 @@ async function main() {
     const backCover = data['back-cover']
       ? await writeCover(attachmentPath(wikiTarget(String(data['back-cover'])), notePath), `${note.slug}-back`)
       : undefined;
-    keepCover(cover);
-    keepCover(backCover);
+    keepCover(cover.base);
+    keepCover(backCover?.base);
 
     const fields = {
       catalog: Number(data.catalog),
@@ -144,14 +146,17 @@ async function main() {
       status: String(data.status),
       format: String(data.genre),
       collaborators: String(data.artist),
-      recordCover: `${cover}.webp`,
-      ogCover: `${cover}.png`,
-      coverUrl: `${cover}.webp`,
+      recordCover: `${cover.base}.webp`,
+      ogCover: `${cover.base}.png`,
+      coverUrl: `${cover.base}.webp`,
       coverAlt: String(data['cover-alt']),
-      backCoverUrl: backCover ? `${backCover}.webp` : undefined,
+      backCoverUrl: backCover ? `${backCover.base}.webp` : undefined,
       backCoverAlt: backCover ? String(data['back-cover-alt'] ?? `${note.title} back cover`) : undefined,
       outboundUrl: data.url ? String(data.url) : null,
-      ambience: Array.isArray(data.ambience) && data.ambience.length === 3 ? data.ambience.map(String) : null,
+      ambience: cover.ambience,
+      backAmbience: backCover?.ambience,
+      placeholder: cover.placeholder,
+      coverColor: cover.coverColor,
     };
     const fileName = `${note.slug}.mdx`;
     fs.writeFileSync(path.join(CONTENT_DIR, fileName), `${frontmatter(fields)}\n${await convertBody(note, titlesToSlugs)}\n`);
@@ -159,7 +164,7 @@ async function main() {
   }
 
   // The crate's back-catalogue sleeve belongs to no note: fixed attachment names, the back optional.
-  // Its hashed URLs go into a small manifest the homepage reads.
+  // Its hashed URLs and colours go into a small manifest the homepage reads.
   const findAttachment = (baseName: string) => fs.readdirSync(ATTACHMENTS_DIR)
     .find((name) => path.parse(name).name === baseName && /\.(png|jpe?g|webp)$/i.test(name));
   const olderWorks = findAttachment(OLDER_WORKS_COVER);
@@ -171,10 +176,14 @@ async function main() {
   const olderWorksBackCover = olderWorksBack
     ? await writeCover(path.join(ATTACHMENTS_DIR, olderWorksBack), 'older-works-back')
     : undefined;
-  for (const base of [olderWorksCover, olderWorksBackCover]) keepCover(base);
+  keepCover(olderWorksCover.base);
+  keepCover(olderWorksBackCover?.base);
   fs.writeFileSync(OLDER_WORKS_MANIFEST, `${JSON.stringify({
-    coverUrl: `${olderWorksCover}.webp`,
-    backCoverUrl: olderWorksBackCover ? `${olderWorksBackCover}.webp` : undefined,
+    coverUrl: `${olderWorksCover.base}.webp`,
+    coverColor: olderWorksCover.coverColor,
+    ambience: olderWorksCover.ambience,
+    backCoverUrl: olderWorksBackCover ? `${olderWorksBackCover.base}.webp` : undefined,
+    backAmbience: olderWorksBackCover?.ambience,
   }, null, 2)}\n`);
 
   removeStale(CONTENT_DIR, keepContent);

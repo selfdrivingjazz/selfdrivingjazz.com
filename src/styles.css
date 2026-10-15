@@ -1,17 +1,18 @@
+/* Sleeve palettes arrive inline on `.ambient-field`; elsewhere these stay transparent rather than inventing a hue. */
 @property --ambient-a {
   syntax: "<color>";
   inherits: true;
-  initial-value: #319a83;
+  initial-value: transparent;
 }
 @property --ambient-b {
   syntax: "<color>";
   inherits: true;
-  initial-value: #703f4c;
+  initial-value: transparent;
 }
 @property --ambient-c {
   syntax: "<color>";
   inherits: true;
-  initial-value: #956e66;
+  initial-value: transparent;
 }
 
 :root {
@@ -32,14 +33,6 @@
 
 * { box-sizing: border-box; }
 html, body { min-width: 320px; min-height: 100%; margin: 0; }
-body {
-  background:
-    radial-gradient(circle at 14% -8%, color-mix(in srgb, var(--ambient-a) 30%, transparent), transparent 34rem),
-    radial-gradient(circle at 96% 22%, color-mix(in srgb, var(--ambient-b) 24%, transparent), transparent 42rem),
-    radial-gradient(circle at 48% 94%, color-mix(in srgb, var(--ambient-c) 16%, transparent), transparent 38rem),
-    linear-gradient(155deg, #0a0f0e 0%, #080808 48%, #100b0d 100%);
-  background-attachment: fixed;
-}
 a { color: inherit; }
 
 .page {
@@ -120,38 +113,63 @@ a { color: inherit; }
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* Glow colours for the drifting blobs; light sleeve colours are capped below so copy keeps its contrast. */
+  --ambient-glow-a: var(--ambient-a);
+  --ambient-glow-b: var(--ambient-b);
+  --ambient-glow-c: var(--ambient-c);
   background:
-    radial-gradient(130% 90% at 50% 115%, color-mix(in srgb, var(--ambient-c) 16%, #060606), transparent 70%),
-    linear-gradient(160deg, color-mix(in srgb, var(--ambient-a) 7%, #070908), #060606 52%, color-mix(in srgb, var(--ambient-b) 6%, #080607));
-  transition: --ambient-a 1800ms ease-in-out, --ambient-b 1800ms ease-in-out, --ambient-c 1800ms ease-in-out;
+    radial-gradient(130% 90% at 50% 115%, color-mix(in srgb, var(--ambient-c) 22%, #060606), transparent 70%),
+    linear-gradient(160deg, color-mix(in srgb, var(--ambient-a) 12%, #070707), #060606 52%, color-mix(in srgb, var(--ambient-b) 10%, #070707));
+  /* Starts the moment the active sleeve changes and settles within ~0.7s; staggered so the colours blend rather than snap. */
+  transition:
+    --ambient-a 520ms var(--ease-out),
+    --ambient-b 620ms var(--ease-out),
+    --ambient-c 700ms var(--ease-out);
+}
+@supports (color: oklch(from red l c h)) {
+  .ambient-field {
+    --ambient-glow-a: oklch(from var(--ambient-a) min(l, .66) c h);
+    --ambient-glow-b: oklch(from var(--ambient-b) min(l, .66) c h);
+    --ambient-glow-c: oklch(from var(--ambient-c) min(l, .66) c h);
+  }
 }
 .ambient-blob {
   position: absolute;
-  width: 72vmax;
-  height: 72vmax;
+  width: 64vmax;
+  height: 64vmax;
   border-radius: 50%;
   mix-blend-mode: screen;
   will-change: transform;
+  animation-duration: 26s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
 }
 .ambient-blob-a {
-  top: -30vmax;
-  left: -22vmax;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-a) 42%, transparent), transparent);
-  animation: ambient-drift-a 31s ease-in-out infinite alternate;
+  top: -26vmax;
+  left: -20vmax;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-glow-a) 50%, transparent), color-mix(in srgb, var(--ambient-glow-a) 20%, transparent) 55%, transparent);
+  animation-name: ambient-drift-a;
+  /* Negative delays start each blob mid-path, so the drift is already moving on first paint. */
+  animation-delay: -9s;
 }
 .ambient-blob-b {
-  top: 4vmax;
-  right: -30vmax;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-b) 36%, transparent), transparent);
-  animation: ambient-drift-b 43s ease-in-out infinite alternate;
+  top: 6vmax;
+  right: -26vmax;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-glow-b) 44%, transparent), color-mix(in srgb, var(--ambient-glow-b) 18%, transparent) 55%, transparent);
+  animation-name: ambient-drift-b;
+  animation-duration: 34s;
+  animation-delay: -17s;
 }
 .ambient-blob-c {
-  bottom: -40vmax;
-  left: 8vmax;
-  width: 88vmax;
-  height: 60vmax;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-c) 30%, transparent), transparent);
-  animation: ambient-drift-c 57s ease-in-out infinite alternate;
+  bottom: -36vmax;
+  left: 6vmax;
+  width: 84vmax;
+  height: 58vmax;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ambient-glow-c) 38%, transparent), color-mix(in srgb, var(--ambient-glow-c) 14%, transparent) 55%, transparent);
+  animation-name: ambient-drift-c;
+  animation-duration: 41s;
+  animation-delay: -23s;
 }
 .ambient-grain {
   position: absolute;
@@ -164,22 +182,22 @@ a { color: inherit; }
   position: absolute;
   inset: 0;
   content: "";
-  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 45%, rgba(0, 0, 0, .55));
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 45%, rgba(0, 0, 0, .5));
 }
 @keyframes ambient-drift-a {
   0% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(18vw, 12vh, 0) scale(1.18); }
-  100% { transform: translate3d(6vw, 26vh, 0) scale(.92); }
+  50% { transform: translate3d(24vw, 14vh, 0) scale(1.16); }
+  100% { transform: translate3d(8vw, 30vh, 0) scale(.9); }
 }
 @keyframes ambient-drift-b {
   0% { transform: translate3d(0, 0, 0) scale(1.05); }
-  50% { transform: translate3d(-20vw, 16vh, 0) scale(.9); }
-  100% { transform: translate3d(-8vw, -10vh, 0) scale(1.2); }
+  50% { transform: translate3d(-26vw, 18vh, 0) scale(.88); }
+  100% { transform: translate3d(-10vw, -12vh, 0) scale(1.18); }
 }
 @keyframes ambient-drift-c {
   0% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50% { transform: translate3d(-14vw, -12vh, 0) rotate(14deg) scale(1.1); }
-  100% { transform: translate3d(16vw, -4vh, 0) rotate(-10deg); }
+  50% { transform: translate3d(-18vw, -14vh, 0) rotate(16deg) scale(1.12); }
+  100% { transform: translate3d(20vw, -6vh, 0) rotate(-12deg); }
 }
 .section-heading {
   display: flex;

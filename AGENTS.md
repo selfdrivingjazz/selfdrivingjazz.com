@@ -17,11 +17,25 @@ title is the filename without the leading emoji. Site frontmatter fields:
 | `year`, `genre`, `artist`, `url` | year, format, collaborators, outbound link |
 | `cover`, `cover-alt` | `"[[attachment]]"` in `nobody/attachments/` + alt text |
 | `back-cover`, `back-cover-alt` | optional flip side: detail-page flip and the crate sleeve's reverse |
-| `ambience` | optional three hex colours for the background |
 
 The note body is the write-up: H1 lines are dropped, `![[image]]` embeds are
 copied as optimised WebP into `public/project-media/<slug>/`, and `[[links]]`
 become text (or links to other project pages).
+
+Cover colours are generated too, never set by hand: the sync samples each front
+and back cover (`scripts/cover-palette.ts`) and writes `ambience` (three hex
+colours: dominant, strongest accent, next accent), `backAmbience` (only with a
+back cover; consumers fall back to that record's own `ambience`), `placeholder`
+(loading gradient) and `coverColor` (average) into the MDX frontmatter, and the
+same palette fields plus `coverColor` into `content/older-works.json`. The site
+reads these fields and never decodes artwork at request time; replacing a cover
+and re-syncing updates its colours.
+
+The frontpage background follows the active crate record and the face turned
+toward the camera, including the Older Works sleeve. Crate activation selects
+the next palette immediately, while scroll selection follows the snap target.
+Colours transition in place and the field drifts gently; reduced-motion
+preferences disable both drift and colour interpolation.
 
 ```sh
 npm run sync:vault    # regenerate content + images from the vault; commit the result

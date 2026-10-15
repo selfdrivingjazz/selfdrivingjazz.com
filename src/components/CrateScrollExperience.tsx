@@ -4,18 +4,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import RecordCrate, { type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
+import RecordCrate, { type CoverSide, type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
 import type { OlderWorksSleeve, Project } from '../data/content-types';
 import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
-import AmbientField, { type Ambience, DEFAULT_AMBIENCE } from './AmbientField';
+import AmbientField, { type Ambience } from './AmbientField';
 
 /** Older releases named in the "older works" blurb before collapsing to "and N more". */
 const OLDER_WORKS_LISTED = 4;
 /** Distance (px) over which copy fades as it slides under the crate on narrow screens. */
 const COPY_FADE_DISTANCE = 72;
+/** Without `scrollend`, a scroll counts as finished once no scroll event has arrived for this long (ms). */
+const SCROLL_IDLE_MS = 160;
+
+/** Scroll snap event (not yet in every DOM typing): the section a gesture is heading for. */
+type SnapEvent = Event & { snapTargetBlock?: Element | null };
 
 interface CrateStory {
   id: string;
@@ -24,7 +29,9 @@ interface CrateStory {
   title: string;
   summary: string;
   cta: string;
+  /** Palettes sampled from the sleeve's artwork: front cover, and reverse (the front again when there is none). */
   ambience: Ambience;
+  backAmbience: Ambience;
 }
 
 /** Opt in with `?pull=1`, opt out with `?pull=0`; the choice persists per browser. */
@@ -49,6 +56,9 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   const panelRef = useRef<HTMLDivElement | null>(null);
   const crateRef = useRef<RecordCrateHandle | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [activeSide, setActiveSide] = useState<CoverSide>('front');
+  /** A record chosen ahead of the scroll (crate flip or pending snap), kept active until the scroll lands or stops. */
+  const heldIndexRef = useRef<number | null>(null);
   const [pullTransition, setPullTransition] = useState(false);
 
   const { stories, records } = useMemo(() => {
@@ -61,7 +71,8 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
       title: project.title,
       summary: project.summary,
       cta: 'view project',
-      ambience: project.ambience ?? DEFAULT_AMBIENCE,
+      ambience: project.ambience,
+      backAmbience: project.backAmbience ?? project.ambience,
     }));
     const recordList: CrateRecord[] = featured.map((project) => ({
       cover: optimizedImageUrl(project.recordCover, 828),
@@ -80,7 +91,8 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
           ? `${older.slice(0, OLDER_WORKS_LISTED).map((project) => project.title).join(' · ')} · and ${older.length - OLDER_WORKS_LISTED} more`
           : older.map((project) => project.title).join(' · '),
         cta: 'browse the catalogue',
-        ambience: DEFAULT_AMBIENCE,
+        ambience: olderWorks.ambience,
+        backAmbience: olderWorks.backAmbience ?? olderWorks.ambience,
       });
       recordList.push({
         cover: optimizedImageUrl(olderWorks.coverUrl, 828),
@@ -91,7 +103,8 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
     }
     return { stories: storyList, records: recordList };
   }, [projects, olderWorks]);
-  const ambience = stories[activeIndex].ambience;
+  const activeStory = stories[activeIndex];
+  const ambience = activeSide === 'back' ? activeStory.backAmbience : activeStory.ambience;
 
   useEffect(() => {
     setPullTransition(readPullTransitionPreference());
@@ -133,20 +146,51 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
         distance = candidateDistance;
         nextIndex = index;
       });
-      setActiveIndex(nextIndex);
+      // A record picked ahead of the scroll stays active until the scroll reaches it (or stops elsewhere).
+      if (heldIndexRef.current === nextIndex) heldIndexRef.current = null;
+      setActiveIndex(heldIndexRef.current ?? nextIndex);
     }
 
-    function scheduleUpdate() {
+    function requestUpdate() {
       if (frameRef.current !== null) return;
       frameRef.current = window.requestAnimationFrame(updateFromScroll);
     }
 
+    function releaseHeldIndex() {
+      heldIndexRef.current = null;
+      requestUpdate();
+    }
+
+    const scrollEndSupported = 'onscrollend' in window;
+    let idleTimer: number | undefined;
+    function handleScroll() {
+      if (!scrollEndSupported) {
+        window.clearTimeout(idleTimer);
+        idleTimer = window.setTimeout(releaseHeldIndex, SCROLL_IDLE_MS);
+      }
+      requestUpdate();
+    }
+
+    // Where supported, the snap target is known as soon as a gesture commits, well before it lands.
+    function handleSnapChanging(event: Event) {
+      const target = (event as SnapEvent).snapTargetBlock;
+      const index = target ? sectionRefs.current.indexOf(target as HTMLElement) : -1;
+      if (index < 0) return;
+      heldIndexRef.current = index;
+      setActiveIndex(index);
+    }
+
     updateFromScroll();
-    window.addEventListener('scroll', scheduleUpdate, { passive: true });
-    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scrollend', releaseHeldIndex);
+    window.addEventListener('scrollsnapchanging', handleSnapChanging);
+    window.addEventListener('resize', requestUpdate);
     return () => {
-      window.removeEventListener('scroll', scheduleUpdate);
-      window.removeEventListener('resize', scheduleUpdate);
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scrollend', releaseHeldIndex);
+      window.removeEventListener('scrollsnapchanging', handleSnapChanging);
+      window.removeEventListener('resize', requestUpdate);
+      window.clearTimeout(idleTimer);
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
     };
   }, []);
@@ -157,8 +201,12 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
     document.documentElement.classList.remove('crate-scroll-active');
   }
 
+  /** A crate flip selects the next record at once; the copy scrolls after it. */
   const advance = useCallback(() => {
-    sectionRefs.current[(activeIndex + 1) % stories.length]?.scrollIntoView({ behavior: 'smooth' });
+    const next = (activeIndex + 1) % stories.length;
+    heldIndexRef.current = next;
+    setActiveIndex(next);
+    sectionRefs.current[next]?.scrollIntoView({ behavior: 'smooth' });
   }, [activeIndex, stories.length]);
 
   /** With the opt-in pull transition, the record leaves the crate before the project page opens. */
@@ -174,13 +222,14 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
 
   return (
     <main className="crate-prototype">
-      <AmbientField ambience={ambience} />
-      <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${stories[activeIndex].title}`}>
+      <AmbientField ambience={ambience} activeIndex={activeIndex} activeSide={activeSide} />
+      <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${activeStory.title}`}>
         <RecordCrate
           ref={crateRef}
           records={records}
           activeIndex={activeIndex}
           onAdvance={advance}
+          onActiveSideChange={setActiveSide}
         />
       </div>
 

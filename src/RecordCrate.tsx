@@ -18,6 +18,9 @@ export interface CrateRecord {
   color: string;
 }
 
+/** Face of a sleeve: `front` is the cover, `back` the reverse. */
+export type CoverSide = 'front' | 'back';
+
 /** Imperative controls for the parent. */
 export interface RecordCrateHandle {
   /**
@@ -32,6 +35,8 @@ interface RecordCrateProps {
   activeIndex: number;
   /** Called when the crate is tapped/activated: the parent moves to the next record. */
   onAdvance: () => void;
+  /** Called when the face of the active record turned toward the camera changes (e.g. the crate is rotated round). */
+  onActiveSideChange?: (side: CoverSide) => void;
   ref?: Ref<RecordCrateHandle>;
 }
 
@@ -79,21 +84,25 @@ const FRONT_CRATE_ROTATION = -0.20;
 const ROTATION_PER_PIXEL = 0.008;
 const DRAG_THRESHOLD = 5;
 const PULL_DURATION_MS = 920;
+/** Cosine past edge-on the active sleeve must turn before its reported side flips, so it can't flicker. */
+const SIDE_HYSTERESIS = 0.06;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
 
-function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: RecordCrateProps) {
+function RecordCrate({ records: crateRecords, activeIndex, onAdvance, onActiveSideChange, ref }: RecordCrateProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const activeIndexRef = useRef(activeIndex);
   const onAdvanceRef = useRef(onAdvance);
+  const onActiveSideChangeRef = useRef(onActiveSideChange);
   const pullOutRef = useRef<RecordCrateHandle['pullOut'] | null>(null);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   activeIndexRef.current = activeIndex;
   onAdvanceRef.current = onAdvance;
+  onActiveSideChangeRef.current = onActiveSideChange;
   useImperativeHandle(ref, () => ({
     pullOut: (index, onDone) => (pullOutRef.current ? pullOutRef.current(index, onDone) : onDone()),
   }), []);
@@ -569,8 +578,33 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
       onAdvanceRef.current();
     }
 
+    // Which face of the active sleeve points at the camera, so the page can take its colours from that side.
+    // Checked every frame against the rendered pose; the parent only hears about changes.
+    const sideNormal = new THREE.Vector3();
+    const sideToCamera = new THREE.Vector3();
+    let reportedSide: CoverSide | undefined;
+    let contextLost = false;
+
+    function reportActiveSide() {
+      const active = records[activeIndexRef.current];
+      if (!active || contextLost) return;
+      const { matrixWorld } = active.mesh;
+      sideNormal.setFromMatrixColumn(matrixWorld, 2).normalize();
+      sideToCamera.setFromMatrixPosition(matrixWorld);
+      sideToCamera.subVectors(camera.position, sideToCamera).normalize();
+      const facing = sideNormal.dot(sideToCamera);
+      const threshold = reportedSide === 'front' ? -SIDE_HYSTERESIS : reportedSide === 'back' ? SIDE_HYSTERESIS : 0;
+      const side: CoverSide = facing >= threshold ? 'front' : 'back';
+      if (side === reportedSide) return;
+      reportedSide = side;
+      onActiveSideChangeRef.current?.(side);
+    }
+
     function handleContextLost(event: Event) {
       event.preventDefault();
+      contextLost = true;
+      // The fallback shows no sleeve, so the page returns to the active record's cover.
+      if (reportedSide === 'back') onActiveSideChangeRef.current?.('front');
       setFailed(true);
     }
     activeRenderer.domElement.addEventListener('webglcontextlost', handleContextLost);
@@ -605,6 +639,7 @@ function RecordCrate({ records: crateRecords, activeIndex, onAdvance, ref }: Rec
       syncRecordMeshes();
       stepPull(performance.now());
       activeRenderer.render(scene, camera);
+      reportActiveSide();
       animationFrame = requestAnimationFrame(render);
     }
     render();

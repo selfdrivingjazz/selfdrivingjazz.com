@@ -1,4 +1,15 @@
 {
   "coverUrl": "/project-covers/older-works-29b041cea8.webp",
-  "backCoverUrl": "/project-covers/older-works-back-b730f55b1d.webp"
+  "coverColor": "#3b4e50",
+  "ambience": [
+    "#1f1e1d",
+    "#345563",
+    "#428a99"
+  ],
+  "backCoverUrl": "/project-covers/older-works-back-b730f55b1d.webp",
+  "backAmbience": [
+    "#191d1f",
+    "#424846",
+    "#737266"
+  ]
 }

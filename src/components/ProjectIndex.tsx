@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Project } from '../data/content-types';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
-import AmbientField, { DEFAULT_AMBIENCE } from './AmbientField';
+import AmbientField from './AmbientField';
 
 /** Projects page: the latest release gets the stage, the back catalogue sits below as a record wall. */
 export default function ProjectIndex({ projects }: { projects: Project[] }) {
@@ -14,7 +14,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
   const [scrolledIndex, setScrolledIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const latest = projects[0];
-  const ambience = projects[hoveredIndex ?? scrolledIndex].ambience ?? DEFAULT_AMBIENCE;
+  const activeIndex = hoveredIndex ?? scrolledIndex;
 
   useEffect(() => {
     let frame = 0;
@@ -57,7 +57,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
 
   return (
     <main className="shell-main index-main">
-      <AmbientField ambience={ambience} />
+      <AmbientField ambience={projects[activeIndex].ambience} activeIndex={activeIndex} />
 
       <section
         className="index-hero"
