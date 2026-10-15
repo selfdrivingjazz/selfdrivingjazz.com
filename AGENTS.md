@@ -54,6 +54,14 @@ each candidate gets a different random series. It then publishes to MTS Outputs.
 default because the model copies attached covers too literally. `use-cover`
 copies the pick into the vault and updates the note.
 
+Every original a `covers` run generates — fronts and backs, rejects and
+alternatives, and the completed images of a failed run — must also be
+registered in the owner's VAMP library (exploration `sdj-album-covers-<slug>`,
+folder `front|back/<run>`) before the run is reported done. Follow
+"Register every original in VAMP" in
+`infra/ops/skills/album-cover-candidates/SKILL.md` (`/home/jmill/sdj`); it
+applies to these Codex runs as well as to ComfyUI ones.
+
 ## Tailnet preview (MTS service `selfdrivingjazz`)
 
 `https://jmill-desktop.tail587341.ts.net:8447` serves an immutable release
