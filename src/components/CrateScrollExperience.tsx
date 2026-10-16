@@ -10,7 +10,7 @@ import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
-import AmbientField, { type Ambience } from './AmbientField';
+import AmbientField from './AmbientField';
 
 /** Older releases named in the "older works" blurb before collapsing to "and N more". */
 const OLDER_WORKS_LISTED = 4;
@@ -29,9 +29,11 @@ interface CrateStory {
   title: string;
   summary: string;
   cta: string;
-  /** Palettes sampled from the sleeve's artwork: front cover, and reverse (the front again when there is none). */
-  ambience: Ambience;
-  backAmbience: Ambience;
+  /** Sleeve artwork for the backdrop, with the precomputed placeholders shown until it loads. */
+  coverUrl: string;
+  placeholder: string;
+  backCoverUrl?: string;
+  backPlaceholder?: string;
 }
 
 /** Opt in with `?pull=1`, opt out with `?pull=0`; the choice persists per browser. */
@@ -71,8 +73,10 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
       title: project.title,
       summary: project.summary,
       cta: 'view project',
-      ambience: project.ambience,
-      backAmbience: project.backAmbience ?? project.ambience,
+      coverUrl: project.coverUrl,
+      placeholder: project.placeholder,
+      backCoverUrl: project.backCoverUrl,
+      backPlaceholder: project.backPlaceholder,
     }));
     const recordList: CrateRecord[] = featured.map((project) => ({
       cover: optimizedImageUrl(project.recordCover, 828),
@@ -91,8 +95,10 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
           ? `${older.slice(0, OLDER_WORKS_LISTED).map((project) => project.title).join(' · ')} · and ${older.length - OLDER_WORKS_LISTED} more`
           : older.map((project) => project.title).join(' · '),
         cta: 'browse the catalogue',
-        ambience: olderWorks.ambience,
-        backAmbience: olderWorks.backAmbience ?? olderWorks.ambience,
+        coverUrl: olderWorks.coverUrl,
+        placeholder: olderWorks.placeholder,
+        backCoverUrl: olderWorks.backCoverUrl,
+        backPlaceholder: olderWorks.backPlaceholder,
       });
       recordList.push({
         cover: optimizedImageUrl(olderWorks.coverUrl, 828),
@@ -104,7 +110,10 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
     return { stories: storyList, records: recordList };
   }, [projects, olderWorks]);
   const activeStory = stories[activeIndex];
-  const ambience = activeSide === 'back' ? activeStory.backAmbience : activeStory.ambience;
+  // The backdrop follows the crate's visible face; a sleeve without a back keeps its front.
+  const showBack = activeSide === 'back' && activeStory.backCoverUrl !== undefined;
+  const backdropUrl = showBack ? activeStory.backCoverUrl ?? activeStory.coverUrl : activeStory.coverUrl;
+  const backdropPlaceholder = showBack ? activeStory.backPlaceholder ?? activeStory.placeholder : activeStory.placeholder;
 
   useEffect(() => {
     setPullTransition(readPullTransitionPreference());
@@ -222,7 +231,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
 
   return (
     <main className="crate-prototype">
-      <AmbientField ambience={ambience} activeIndex={activeIndex} activeSide={activeSide} />
+      <AmbientField coverUrl={backdropUrl} placeholder={backdropPlaceholder} activeIndex={activeIndex} activeSide={activeSide} />
       <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${activeStory.title}`}>
         <RecordCrate
           ref={crateRef}

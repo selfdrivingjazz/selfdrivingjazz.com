@@ -7,8 +7,8 @@
  * Source: every note in `nobody/publish/project/` with `publish: true`.
  * Output (fully regenerated, commit it): `content/projects/*.mdx`, `content/older-works.json`,
  * `public/project-covers/<name>-<hash>.{webp,png}` and `public/project-media/<slug>/*`.
- * Image filenames carry a content hash so replacing an image always changes its URL. Cover colours (ambience
- * palettes, placeholder, average colour) are computed here from the artwork, so the site never decodes images.
+ * Image filenames carry a content hash so replacing an image always changes its URL. Cover colours (front and
+ * back loading placeholders, average colour) are computed here from the artwork, so the site never decodes images.
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -153,9 +153,8 @@ async function main() {
       backCoverUrl: backCover ? `${backCover.base}.webp` : undefined,
       backCoverAlt: backCover ? String(data['back-cover-alt'] ?? `${note.title} back cover`) : undefined,
       outboundUrl: data.url ? String(data.url) : null,
-      ambience: cover.ambience,
-      backAmbience: backCover?.ambience,
       placeholder: cover.placeholder,
+      backPlaceholder: backCover?.placeholder,
       coverColor: cover.coverColor,
     };
     const fileName = `${note.slug}.mdx`;
@@ -181,9 +180,9 @@ async function main() {
   fs.writeFileSync(OLDER_WORKS_MANIFEST, `${JSON.stringify({
     coverUrl: `${olderWorksCover.base}.webp`,
     coverColor: olderWorksCover.coverColor,
-    ambience: olderWorksCover.ambience,
+    placeholder: olderWorksCover.placeholder,
     backCoverUrl: olderWorksBackCover ? `${olderWorksBackCover.base}.webp` : undefined,
-    backAmbience: olderWorksBackCover?.ambience,
+    backPlaceholder: olderWorksBackCover?.placeholder,
   }, null, 2)}\n`);
 
   removeStale(CONTENT_DIR, keepContent);

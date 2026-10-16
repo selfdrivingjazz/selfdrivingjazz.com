@@ -1,15 +1,7 @@
 {
   "coverUrl": "/project-covers/older-works-29b041cea8.webp",
   "coverColor": "#3b4e50",
-  "ambience": [
-    "#1f1e1d",
-    "#345563",
-    "#428a99"
-  ],
+  "placeholder": "radial-gradient(at 0% 0%, rgb(60 64 60), transparent 70%), radial-gradient(at 100% 0%, rgb(47 71 82), transparent 70%), radial-gradient(at 0% 100%, rgb(54 66 70), transparent 70%), radial-gradient(at 100% 100%, rgb(68 103 103), transparent 70%), rgb(61 70 69)",
   "backCoverUrl": "/project-covers/older-works-back-b730f55b1d.webp",
-  "backAmbience": [
-    "#191d1f",
-    "#424846",
-    "#737266"
-  ]
+  "backPlaceholder": "radial-gradient(at 0% 0%, rgb(52 54 51), transparent 70%), radial-gradient(at 100% 0%, rgb(28 34 36), transparent 70%), radial-gradient(at 0% 100%, rgb(46 48 46), transparent 70%), radial-gradient(at 100% 100%, rgb(43 50 50), transparent 70%), rgb(47 50 46)"
 }
