@@ -1,11 +1,13 @@
+import type { CSSProperties } from 'react';
+
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Project } from '../data/content-types';
 import { crateHref } from '../lib/crate';
+import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
-import AmbientField from './AmbientField';
 import CoverFlip from './CoverFlip';
 
 interface ProjectDetailExperienceProps {
@@ -15,12 +17,18 @@ interface ProjectDetailExperienceProps {
   older?: Project;
 }
 
+type DetailStyle = CSSProperties & { '--detail-art': string };
+
 export default async function ProjectDetailExperience({ project, projectIndex, newer, older }: ProjectDetailExperienceProps) {
   const label = labelCode(project.catalog);
 
   return (
-    <main className="shell-main detail-main immersive-detail">
-      <AmbientField coverUrl={project.coverUrl} placeholder={project.placeholder} />
+    <main
+      className="shell-main detail-main immersive-detail"
+      style={{ '--detail-art': `url("${optimizedImageUrl(project.coverUrl, 384)}")` } as DetailStyle}
+    >
+      <div className="detail-art-backdrop" style={{ background: project.placeholder }} aria-hidden="true" />
+      <div className="detail-art-scrim" aria-hidden="true" />
 
       <article className="project-detail">
         <nav className="detail-bar" aria-label="Project">

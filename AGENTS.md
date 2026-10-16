@@ -23,20 +23,23 @@ copied as optimised WebP into `public/project-media/<slug>/`, and `[[links]]`
 become text (or links to other project pages).
 
 Cover colours are generated too, never set by hand: the sync samples each front
-and back cover (`scripts/cover-palette.ts`) and writes `placeholder` (front
-loading gradient), `backPlaceholder` (only with a back cover) and `coverColor`
-(front average) into the MDX frontmatter, and the same three fields into
-`content/older-works.json`. The site reads these fields and never decodes
-artwork at request time; replacing a cover and re-syncing updates its colours.
+and back cover (`scripts/cover-palette.ts`) and writes `ambience` (three hex
+colours: dominant, strongest accent, next accent), `backAmbience` (only with a
+back cover; consumers fall back to that record's own `ambience`), `placeholder`
+(loading gradient) and `coverColor` (average) into the MDX frontmatter, and the
+same palette fields plus `coverColor` into `content/older-works.json`. The site
+reads these fields and never decodes artwork at request time; replacing a cover
+and re-syncing updates its colours.
 
-Page backgrounds use one shared component (`src/components/AmbientField.tsx`):
-a blurred, darkened copy of the actual cover art under the same scrim on the
-frontpage, project index and project detail pages, with the matching
-placeholder showing until the art loads. On the frontpage it follows the active
-crate record and the face turned toward the camera (including the Older Works
-sleeve): crate activation selects the next cover immediately, while scroll
-selection follows the snap target. The backdrop drifts visibly; reduced-motion
-preferences disable the drift and cross-fades.
+The frontpage background (`CrateBackdrop`) is a lit room around the crate built
+only from those palettes, so nothing waits on artwork: a swaying key light in
+the most colourful accent, a floor pool, and a slowly spinning vinyl sheen
+behind the crate. It follows the active crate record and the face turned toward
+the camera, including the Older Works sleeve; crate activation switches
+immediately and scroll follows the snap target. Each change sweeps a band of
+the new light across the room in the direction of travel. Reduced-motion
+preferences stop the motion, sweep and colour interpolation. The projects index
+keeps the drifting `AmbientField`; detail pages use the blurred cover backdrop.
 
 ```sh
 npm run sync:vault    # regenerate content + images from the vault; commit the result

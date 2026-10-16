@@ -57,7 +57,7 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
 
   return (
     <main className="shell-main index-main">
-      <AmbientField coverUrl={projects[activeIndex].coverUrl} placeholder={projects[activeIndex].placeholder} activeIndex={activeIndex} />
+      <AmbientField ambience={projects[activeIndex].ambience} activeIndex={activeIndex} />
 
       <section
         className="index-hero"
