@@ -223,7 +223,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
 
   return (
     <main className="crate-prototype">
-      <CrateBackdrop ambience={ambience} activeIndex={activeIndex} activeSide={activeSide} recordCount={stories.length} />
+      <CrateBackdrop ambience={ambience} activeIndex={activeIndex} activeSide={activeSide} />
       <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${activeStory.title}`}>
         <RecordCrate
           ref={crateRef}

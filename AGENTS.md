@@ -31,15 +31,14 @@ same palette fields plus `coverColor` into `content/older-works.json`. The site
 reads these fields and never decodes artwork at request time; replacing a cover
 and re-syncing updates its colours.
 
-The frontpage background (`CrateBackdrop`) is a lit room around the crate built
-only from those palettes, so nothing waits on artwork: a swaying key light in
-the most colourful accent, a floor pool, and a slowly spinning vinyl sheen
-behind the crate. It follows the active crate record and the face turned toward
-the camera, including the Older Works sleeve; crate activation switches
-immediately and scroll follows the snap target. Each change sweeps a band of
-the new light across the room in the direction of travel. Reduced-motion
-preferences stop the motion, sweep and colour interpolation. The projects index
-keeps the drifting `AmbientField`; detail pages use the blurred cover backdrop.
+The frontpage background (`CrateBackdrop`) is a quietly lit room around the
+crate built only from those palettes, so nothing waits on artwork: an overhead
+key light in the most colourful accent that drifts very slowly, and a soft pool
+of light on the floor. It follows the active crate record and the face turned
+toward the camera, including the Older Works sleeve; crate activation switches
+immediately and scroll follows the snap target, with the colours fading across.
+Reduced-motion preferences stop the drift and the fade. The projects index keeps
+the drifting `AmbientField`; detail pages use the blurred cover backdrop.
 
 ```sh
 npm run sync:vault    # regenerate content + images from the vault; commit the result
