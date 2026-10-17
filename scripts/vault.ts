@@ -18,7 +18,7 @@ export interface VaultNote {
 }
 
 export function slugify(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return text.toLowerCase().replace(/[\s.]+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
 /** Note title from its filename, without the leading emoji Obsidian notes carry. */
