@@ -5,6 +5,7 @@ import ProjectDetailExperience from '../../../components/ProjectDetailExperience
 import JsonLd from '../../../components/JsonLd';
 import SiteShell from '../../../components/SiteShell';
 import { getProject, getProjects } from '../../../lib/content';
+import { splitCrate } from '../../../lib/crate';
 import { SITE_NAME, SITE_URL, pageMetadata } from '../../../lib/metadata';
 
 interface ProjectPageProps {
@@ -30,6 +31,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const project = await getProject(slug);
   if (!project) notFound();
   const projectIndex = projects.findIndex((candidate) => candidate.slug === project.slug);
+  const inCrate = splitCrate(projects).featured.some((candidate) => candidate.slug === project.slug);
 
   const projectUrl = `${SITE_URL}/projects/${project.slug}`;
   const imageUrl = project.coverUrl.startsWith('http')
@@ -58,7 +60,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       <JsonLd data={projectData} />
       <ProjectDetailExperience
         project={project}
-        projectIndex={projectIndex}
+        inCrate={inCrate}
         newer={projects[projectIndex - 1]}
         older={projects[projectIndex + 1]}
       />

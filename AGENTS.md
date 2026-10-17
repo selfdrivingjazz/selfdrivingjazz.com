@@ -15,6 +15,8 @@ title is the filename without the leading emoji. Site frontmatter fields:
 | `catalog` | label `SDJ-<n>`, unique, higher = newer; sets order |
 | `summary`, `status` | one-line summary, project status |
 | `year`, `genre`, `artist`, `url` | year, format, collaborators, outbound link |
+| `live` | `false` when the project is no longer online: no visit buttons (`url` stays for other readers) |
+| `crate` | homepage crate place: omitted = by `catalog`; `false` = never; a number = sits as that catalogue number (newer releases still push it out) |
 | `cover`, `cover-alt` | `"[[attachment]]"` in `nobody/attachments/` + alt text |
 | `back-cover`, `back-cover-alt` | optional flip side: detail-page flip and the crate sleeve's reverse |
 
@@ -47,7 +49,7 @@ npm run sync:vault    # regenerate content + images from the vault; commit the r
 The sync fails loudly on missing fields or duplicate catalogue numbers. It also
 requires `nobody/attachments/sdj-cover-older-works.<png|jpg|webp>` (optional
 `sdj-cover-older-works-back.*`): the crate's "older works" sleeve standing in for
-releases beyond the newest seven. Image filenames carry a content hash, so a
+releases without their own crate sleeve (beyond the seven highest crate places). Image filenames carry a content hash, so a
 replaced image always gets a new URL.
 
 ## Covers: Codex image generation → vault

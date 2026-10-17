@@ -12,14 +12,15 @@ import CoverFlip from './CoverFlip';
 
 interface ProjectDetailExperienceProps {
   project: Project;
-  projectIndex: number;
+  /** Whether the release has its own sleeve in the homepage crate (else it sits behind "older works"). */
+  inCrate: boolean;
   newer?: Project;
   older?: Project;
 }
 
 type DetailStyle = CSSProperties & { '--detail-art': string };
 
-export default async function ProjectDetailExperience({ project, projectIndex, newer, older }: ProjectDetailExperienceProps) {
+export default async function ProjectDetailExperience({ project, inCrate, newer, older }: ProjectDetailExperienceProps) {
   const label = labelCode(project.catalog);
 
   return (
@@ -32,7 +33,7 @@ export default async function ProjectDetailExperience({ project, projectIndex, n
 
       <article className="project-detail">
         <nav className="detail-bar" aria-label="Project">
-          <Link href={crateHref(projectIndex, project.slug)}><span aria-hidden="true">←</span> back</Link>
+          <Link href={crateHref(project.slug, inCrate)}><span aria-hidden="true">←</span> back</Link>
           <span className="detail-label">{label}</span>
         </nav>
 

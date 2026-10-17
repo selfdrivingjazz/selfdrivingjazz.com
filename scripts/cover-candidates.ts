@@ -14,7 +14,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { CRATE_RELEASES } from '../src/lib/crate.ts';
+import { crateSlot, splitCrate } from '../src/lib/crate.ts';
 import { ATTACHMENTS_DIR, findNote, OLDER_WORKS_COVER, readNotes, type VaultNote, wikiTarget } from './vault.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -122,8 +122,8 @@ function projectSubject(note: VaultNote, back: boolean): CoverSubject {
 function olderWorksSubject(back: boolean): CoverSubject {
   const published = readNotes()
     .filter((note) => note.data.publish === true)
-    .sort((left, right) => Number(right.data.catalog) - Number(left.data.catalog));
-  const older = published.slice(CRATE_RELEASES);
+    .map((note) => ({ note, catalog: Number(note.data.catalog), crateSlot: crateSlot(Number(note.data.catalog), note.data.crate) }));
+  const older = splitCrate(published).older.map(({ note }) => note);
   if (older.length === 0) throw new Error('no older releases: every project has its own sleeve in the crate');
   const brief = [
     '## The sleeve',

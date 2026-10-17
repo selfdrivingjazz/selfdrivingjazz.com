@@ -6,7 +6,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import RecordCrate, { type CoverSide, type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
 import type { OlderWorksSleeve, Project } from '../data/content-types';
-import { CRATE_RELEASES, OLDER_WORKS_ID } from '../lib/crate';
+import { OLDER_WORKS_ID, splitCrate } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
@@ -25,11 +25,14 @@ type SnapEvent = Event & { snapTargetBlock?: Element | null };
 
 interface CrateStory {
   id: string;
+  /** Internal page the secondary button opens: the project's credits, or the catalogue. */
   href: string;
   meta: string[];
   title: string;
   summary: string;
   cta: string;
+  /** The live project, opened by the primary "visit" button; absent when it is not online. */
+  visitUrl?: string;
   /** Palettes sampled from the sleeve's artwork: front cover, and reverse (the front again when there is none). */
   ambience: Ambience;
   backAmbience: Ambience;
@@ -63,15 +66,15 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   const [pullTransition, setPullTransition] = useState(false);
 
   const { stories, records } = useMemo(() => {
-    const featured = projects.slice(0, CRATE_RELEASES);
-    const older = projects.slice(CRATE_RELEASES);
-    const storyList: CrateStory[] = featured.map((project, index) => ({
+    const { featured, older } = splitCrate(projects);
+    const storyList: CrateStory[] = featured.map((project) => ({
       id: project.slug,
       href: `/projects/${project.slug}`,
       meta: [labelCode(project.catalog), project.year],
       title: project.title,
       summary: project.summary,
-      cta: 'view project',
+      cta: 'credits',
+      visitUrl: project.outboundUrl ?? undefined,
       ambience: project.ambience,
       backAmbience: project.backAmbience ?? project.ambience,
     }));
@@ -251,9 +254,14 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
                 </div>
                 <Heading id={`${story.id}-title`} style={titleFitStyle(story.title)}>{story.title}</Heading>
                 <p>{story.summary}</p>
-                <Link href={story.href} onClick={(event) => openStory(event, index)}>
-                  {story.cta} <span aria-hidden="true">↗</span>
-                </Link>
+                <div className="crate-story-actions">
+                  {story.visitUrl && (
+                    <a className="is-primary" href={story.visitUrl} target="_blank" rel="noreferrer">
+                      visit <span aria-hidden="true">↗</span>
+                    </a>
+                  )}
+                  <Link href={story.href} onClick={(event) => openStory(event, index)}>{story.cta}</Link>
+                </div>
               </div>
             </section>
           );

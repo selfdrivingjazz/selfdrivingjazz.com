@@ -603,7 +603,13 @@ a { color: inherit; }
   font-size: clamp(16px, 1.35vw, 20px);
   line-height: 1.45;
 }
-.crate-story-copy > a,
+.crate-story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+}
+.crate-story-actions a,
 .index-cta,
 .outbound-link {
   width: fit-content;
@@ -622,8 +628,8 @@ a { color: inherit; }
   text-decoration: none;
   transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
 }
-.crate-story-copy > a:hover,
-.crate-story-copy > a:focus-visible,
+.crate-story-actions a:hover,
+.crate-story-actions a:focus-visible,
 .index-hero-link:hover .index-cta,
 .index-hero-link:focus-visible .index-cta,
 .outbound-link:hover,
@@ -632,6 +638,18 @@ a { color: inherit; }
   color: #0a0a0a;
   background: #f1f1ed;
   outline: none;
+}
+.crate-story-actions a { margin-top: 0; }
+/* "visit" leads: filled, and dims slightly on hover where the outlined buttons fill. */
+.crate-story-actions a.is-primary {
+  border-color: #f1f1ed;
+  color: #0a0a0a;
+  background: #f1f1ed;
+}
+.crate-story-actions a.is-primary:hover,
+.crate-story-actions a.is-primary:focus-visible {
+  border-color: #c9c9c3;
+  background: #c9c9c3;
 }
 .crate-visual-panel .record-crate-canvas { cursor: pointer; touch-action: pan-y; }
 .crate-visual-panel .record-crate-canvas.is-dragging { cursor: grabbing; }
@@ -671,7 +689,8 @@ a { color: inherit; }
     font-size: 15px;
     line-height: 1.4;
   }
-  .crate-story-copy > a { margin-top: 18px; padding: 9px 15px 10px; font-size: 12px; }
+  .crate-story-actions { margin-top: 18px; }
+  .crate-story-actions a { padding: 9px 15px 10px; font-size: 12px; }
   .crate-progress { display: none; }
   /* Crate on top, copy below: centre the light on the crate and darken under the copy. */
   .crate-backdrop {
@@ -841,15 +860,21 @@ a { color: inherit; }
   font-variant-numeric: tabular-nums;
   letter-spacing: .12em;
 }
+/* Fixed text heights (title: 3 lines, summary: 2) keep every tile in a row the same height. */
 .record-tile-title {
-  display: block;
+  display: -webkit-box;
+  min-height: calc(3 * 1.08em);
   margin-top: 6px;
+  overflow: hidden;
   font-size: clamp(20px, 2vw, 26px);
   font-weight: 540;
   letter-spacing: -.045em;
   line-height: 1.08;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 .record-tile-summary {
+  min-height: calc(2 * 1.38em);
   display: -webkit-box;
   margin-top: 6px;
   overflow: hidden;

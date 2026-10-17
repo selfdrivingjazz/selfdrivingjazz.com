@@ -1,6 +1,8 @@
 export interface Project {
   /** Catalogue number from the vault note; the label code is `SDJ-<catalog>` and higher is newer. */
   catalog: number;
+  /** Where the release stands in the homepage crate; `null` keeps it out (see `crateSlot` in lib/crate). */
+  crateSlot: number | null;
   slug: string;
   title: string;
   summary: string;

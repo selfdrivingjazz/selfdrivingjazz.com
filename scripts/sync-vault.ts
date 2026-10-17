@@ -14,6 +14,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { crateSlot } from '../src/lib/crate.ts';
 import { type CoverColors, coverColors } from './cover-palette.ts';
 import { ATTACHMENTS_DIR, NOTES_DIR, noteTitle, OLDER_WORKS_COVER, readNotes, type VaultNote, wikiTarget } from './vault.ts';
 
@@ -139,6 +140,7 @@ async function main() {
 
     const fields = {
       catalog: Number(data.catalog),
+      crateSlot: crateSlot(Number(data.catalog), data.crate),
       slug: note.slug,
       title: note.title,
       summary: String(data.summary),
@@ -152,7 +154,7 @@ async function main() {
       coverAlt: String(data['cover-alt']),
       backCoverUrl: backCover ? `${backCover.base}.webp` : undefined,
       backCoverAlt: backCover ? String(data['back-cover-alt'] ?? `${note.title} back cover`) : undefined,
-      outboundUrl: data.url ? String(data.url) : null,
+      outboundUrl: data.url && data.live !== false ? String(data.url) : null,
       ambience: cover.ambience,
       backAmbience: backCover?.ambience,
       placeholder: cover.placeholder,
