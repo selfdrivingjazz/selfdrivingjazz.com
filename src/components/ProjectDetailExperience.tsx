@@ -57,7 +57,7 @@ export default async function ProjectDetailExperience({ project, inCrate, newer,
             </dl>
             {project.outboundUrl && (
               <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
-                visit project <span aria-hidden="true">↗</span>
+                visit project
               </a>
             )}
           </header>

@@ -257,7 +257,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
                 <div className="crate-story-actions">
                   {story.visitUrl && (
                     <a className="is-primary" href={story.visitUrl} target="_blank" rel="noreferrer">
-                      visit <span aria-hidden="true">↗</span>
+                      visit
                     </a>
                   )}
                   <Link href={story.href} onClick={(event) => openStory(event, index)}>{story.cta}</Link>
