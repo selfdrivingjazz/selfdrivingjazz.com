@@ -47,7 +47,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { min-width: 320px; min-height: 100%; margin: 0; }
+html, body { min-height: 100%; margin: 0; }
 a { color: inherit; }
 
 .page {
@@ -550,16 +550,28 @@ a { color: inherit; }
   transition: opacity 420ms ease;
 }
 .crate-story {
+  /* Room kept clear under the fixed header. */
+  --copy-clearance: calc(var(--header-height) + 40px);
   min-height: 100svh;
   padding:
-    calc(var(--header-height) + 40px)
-    clamp(44px, 5vw, 92px)
+    var(--copy-clearance)
+    clamp(24px, 5vw, 92px)
     10svh
-    max(60px, calc((100vw - 1440px) / 2 + 68px));
+    max(clamp(var(--page-pad), 6.67vw, 60px), calc((100vw - 1440px) / 2 + 68px));
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   scroll-snap-align: start;
   scroll-snap-stop: always;
+}
+/*
+ * Every entry's copy starts on the same line, 36svh down, however long its title and summary: the spacer grows
+ * into the free room up to that line, so only copy too tall for the room below it starts higher.
+ */
+.crate-story::before {
+  flex: 1 0 0;
+  max-height: calc(36svh - var(--copy-clearance));
+  content: "";
 }
 .crate-story-copy {
   width: min(100%, 540px);
@@ -656,8 +668,55 @@ a { color: inherit; }
 .crate-prototype:has(.is-pulling) .crate-copy-track,
 .crate-page:has(.is-pulling) .header { opacity: 0; pointer-events: none; }
 
+/* Short landscape screens (a phone on its side): less air and height-bound titles, so entries fit beside the crate. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .crate-story {
+    --copy-clearance: calc(var(--header-height) + 12px);
+    padding-bottom: 16px;
+  }
+  .crate-story h1,
+  .crate-story h2 { --title-size: clamp(30px, min(6.4vw, 11svh), 104px); margin-top: 10px; }
+  .crate-story-copy > p { margin-top: 10px; }
+  .crate-story-actions { margin-top: 14px; }
+}
+
+/*
+ * Phones, upright or on their side: crate titles also keep to two lines, so the longer line of their most even
+ * two-line split (see lib/titleFit.ts) must fit. A line of mixed glyphs averages under .55em a character; a rare
+ * third line costs only height.
+ */
+@media (max-width: 899px) and (orientation: portrait), (orientation: landscape) and (max-height: 560px) {
+  .crate-story h1,
+  .crate-story h2 {
+    font-size: min(
+      var(--title-size),
+      calc(100cqi / (var(--title-longest-word, 1) * .62)),
+      calc(100cqi / (var(--title-two-lines, 1) * .55))
+    );
+  }
+}
+
 @media (max-width: 899px) {
   .crate-page .header { padding-inline: var(--page-pad); }
+}
+
+/* Narrow portrait screens: crate on top, copy underneath. */
+@media (max-width: 899px) and (orientation: portrait) {
+  /*
+   * One crate for every record. It takes the height the tallest entry's copy leaves free (CrateScrollExperience
+   * measures it into --crate-copy-height), between a small floor and 63svh, so every entry's copy, buttons
+   * included, fits in full in the same region underneath. The 36px is half the copy fade distance
+   * (COPY_FADE_DISTANCE), which keeps copy at rest fully shown.
+   */
+  .crate-prototype {
+    --crate-copy-bottom: calc(30px + env(safe-area-inset-bottom));
+    --crate-min-height: calc(var(--header-height) + 96px);
+    --crate-height: clamp(
+      var(--crate-min-height),
+      calc(100svh - var(--crate-copy-height, 0px) - 36px - var(--crate-copy-bottom)),
+      63svh
+    );
+  }
   .crate-visual-panel {
     z-index: 30;
     top: 0;
@@ -665,14 +724,16 @@ a { color: inherit; }
     left: 0;
     bottom: auto;
     width: 100%;
-    height: 63svh;
+    height: var(--crate-height);
   }
   .crate-visual-panel .record-crate-stage { top: var(--header-height); }
   .crate-copy-track { width: 100%; }
+  /* Copy rests on the bottom edge, so the buttons sit in the same place for every entry. */
   .crate-story {
-    padding: 63svh var(--page-pad) calc(30px + env(safe-area-inset-bottom));
-    align-items: flex-end;
+    padding: var(--crate-min-height) var(--page-pad) var(--crate-copy-bottom);
+    justify-content: flex-end;
   }
+  .crate-story::before { content: none; }
   /* Copy fades out as it slides up under the crate (see --copy-reveal in CrateScrollExperience). */
   .crate-story-copy,
   .crate-story.is-active .crate-story-copy {
@@ -691,17 +752,16 @@ a { color: inherit; }
   }
   .crate-story-actions { margin-top: 18px; }
   .crate-story-actions a { padding: 9px 15px 10px; font-size: 12px; }
-  .crate-progress { display: none; }
   /* Crate on top, copy below: centre the light on the crate and darken under the copy. */
   .crate-backdrop {
     --stage-x: 50vw;
-    --stage-y: 36svh;
-    --floor-y: 57svh;
+    --stage-y: calc((var(--header-height) + var(--crate-height)) / 2);
+    --floor-y: calc(var(--crate-height) - 6svh);
   }
   .crate-backdrop::after {
     background:
-      linear-gradient(to top, rgba(4, 4, 4, .88) 0%, rgba(4, 4, 4, .55) 26%, transparent 46%),
-      radial-gradient(ellipse 100% 70% at 50% 35%, transparent 50%, rgba(0, 0, 0, .45));
+      linear-gradient(to top, rgba(4, 4, 4, .88) 0%, rgba(4, 4, 4, .55) calc(89% - var(--crate-height)), transparent calc(109% - var(--crate-height))),
+      radial-gradient(ellipse 100% 70% at 50% var(--stage-y), transparent 50%, rgba(0, 0, 0, .45));
   }
 }
 

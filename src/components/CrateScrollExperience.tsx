@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import RecordCrate, { type CoverSide, type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
 import type { OlderWorksSleeve, Project } from '../data/content-types';
 import { OLDER_WORKS_ID, splitCrate } from '../lib/crate';
@@ -15,7 +15,10 @@ import CrateBackdrop from './CrateBackdrop';
 
 /** Older releases named in the "older works" blurb before collapsing to "and N more". */
 const OLDER_WORKS_LISTED = 4;
-/** Distance (px) over which copy fades as it slides under the crate on narrow screens. */
+/**
+ * Distance (px) over which copy fades as it slides under the crate on narrow screens. The crate there keeps half
+ * of it clear above the tallest copy (`--crate-height` in styles.css), so copy at rest is shown in full.
+ */
 const COPY_FADE_DISTANCE = 72;
 /** Without `scrollend`, a scroll counts as finished once no scroll event has arrived for this long (ms). */
 const SCROLL_IDLE_MS = 160;
@@ -57,6 +60,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   const router = useRouter();
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
   const frameRef = useRef<number | null>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const crateRef = useRef<RecordCrateHandle | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -109,6 +113,23 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   }, [projects, olderWorks]);
   const activeStory = stories[activeIndex];
   const ambience = activeSide === 'back' ? activeStory.backAmbience : activeStory.ambience;
+
+  // On narrow portrait screens the copy sits under the crate, which takes the height the tallest entry's copy
+  // leaves free (`--crate-height` in styles.css): one crate for every record, and every copy fits in full.
+  // Measured before the crate's renderer starts, and again whenever a copy's height changes (fonts, width).
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main) return undefined;
+    const copies = sectionRefs.current.flatMap((section) => section?.firstElementChild ?? []);
+    const measureCopy = () => {
+      const tallest = Math.max(0, ...copies.map((copy) => copy.getBoundingClientRect().height));
+      main.style.setProperty('--crate-copy-height', `${Math.ceil(tallest)}px`);
+    };
+    measureCopy();
+    const observer = new ResizeObserver(measureCopy);
+    for (const copy of copies) observer.observe(copy);
+    return () => observer.disconnect();
+  }, [stories]);
 
   useEffect(() => {
     setPullTransition(readPullTransitionPreference());
@@ -189,11 +210,15 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
     window.addEventListener('scrollend', releaseHeldIndex);
     window.addEventListener('scrollsnapchanging', handleSnapChanging);
     window.addEventListener('resize', requestUpdate);
+    // The crate's height follows the copy (see measureCopy), and with it the line where copy starts to fade.
+    const panelObserver = new ResizeObserver(requestUpdate);
+    if (panelRef.current) panelObserver.observe(panelRef.current);
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('scrollend', releaseHeldIndex);
       window.removeEventListener('scrollsnapchanging', handleSnapChanging);
       window.removeEventListener('resize', requestUpdate);
+      panelObserver.disconnect();
       window.clearTimeout(idleTimer);
       if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
     };
@@ -225,7 +250,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   }
 
   return (
-    <main className="crate-prototype">
+    <main className="crate-prototype" ref={mainRef}>
       <CrateBackdrop ambience={ambience} activeIndex={activeIndex} activeSide={activeSide} />
       <div className="crate-visual-panel" ref={panelRef} aria-label={`Record crate showing ${activeStory.title}`}>
         <RecordCrate

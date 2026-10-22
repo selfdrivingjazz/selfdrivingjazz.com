@@ -42,6 +42,15 @@ immediately and scroll follows the snap target, with the colours fading across.
 Reduced-motion preferences stop the drift and the fade. The projects index keeps
 the drifting `AmbientField`; detail pages use the blurred cover backdrop.
 
+The crate layout is one system for every record, whatever the length of its
+title and summary: the crate never moves between records, and each entry's copy
+(meta, title, summary, buttons) fits in full at every viewport. Desktop and
+short landscape screens put the copy beside the crate, starting on a shared
+line; narrow portrait screens stack it under the crate, which takes the height
+the tallest entry's copy leaves free (measured in `CrateScrollExperience`), and
+on phones titles keep to two lines (`lib/titleFit.ts`). Fix layout problems in
+that system, never per record or by editing vault prose.
+
 ```sh
 npm run sync:vault    # regenerate content + images from the vault; commit the result
 ```
