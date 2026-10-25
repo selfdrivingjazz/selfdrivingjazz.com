@@ -13,6 +13,7 @@
     "use-cover": "node scripts/use-cover.ts"
   },
   "dependencies": {
+    "@openpanel/web": "^1.4.1",
     "cannon-es": "^0.20.0",
     "gray-matter": "^4.0.3",
     "next": "^16.3.1",

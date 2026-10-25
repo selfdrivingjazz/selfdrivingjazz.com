@@ -9,6 +9,7 @@ import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
 import CoverFlip from './CoverFlip';
+import TrackedAnchor from './TrackedAnchor';
 
 interface ProjectDetailExperienceProps {
   project: Project;
@@ -56,9 +57,15 @@ export default async function ProjectDetailExperience({ project, inCrate, newer,
               <div><dt>with</dt><dd>{project.collaborators}</dd></div>
             </dl>
             {project.outboundUrl && (
-              <a className="outbound-link" href={project.outboundUrl} target="_blank" rel="noreferrer">
+              <TrackedAnchor
+                className="outbound-link"
+                href={project.outboundUrl}
+                target="_blank"
+                rel="noreferrer"
+                event={{ name: 'project_link_open', project: project.slug }}
+              >
                 visit project
-              </a>
+              </TrackedAnchor>
             )}
           </header>
         </div>

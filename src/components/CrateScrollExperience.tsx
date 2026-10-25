@@ -6,6 +6,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import RecordCrate, { type CoverSide, type CrateRecord, type RecordCrateHandle } from '../RecordCrate';
 import type { OlderWorksSleeve, Project } from '../data/content-types';
+import { trackEvent } from '../lib/analytics';
 import { OLDER_WORKS_ID, splitCrate } from '../lib/crate';
 import { optimizedImageUrl } from '../lib/imageUrl';
 import { labelCode } from '../lib/labels';
@@ -242,6 +243,7 @@ export default function CrateScrollExperience({ projects, olderWorks }: CrateScr
   function openStory(event: ReactMouseEvent<HTMLAnchorElement>, index: number) {
     const { id, href } = stories[index];
     prepareToLeave(id);
+    if (id !== OLDER_WORKS_ID) trackEvent({ name: 'project_open', project: id, source: 'crate' });
     if (!pullTransition || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     const crate = crateRef.current;

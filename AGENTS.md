@@ -110,3 +110,41 @@ bin/sdj selfdrivingjazz status --json    # Revision must match the new commit
 
 Production (`bin/sdj selfdrivingjazz promote …`) requires explicit user approval.
 Full SOP: `infra/ops/README.md` → "Self-Driving Jazz release candidates".
+
+## Analytics (OpenPanel, production only)
+
+`src/components/Analytics.tsx` + `src/lib/analytics.ts` use `@openpanel/web`.
+Nothing loads unless **all** hold: `NEXT_PUBLIC_DEPLOYMENT_ENVIRONMENT=production`,
+a valid `NEXT_PUBLIC_OPENPANEL_CLIENT_ID`, the page is served from
+`https://www.selfdrivingjazz.com` (the apex redirects there), and the browser
+sends neither Do Not Track nor Global Privacy Control. Otherwise the SDK chunk
+is never fetched and no request is made — dev, localhost, Vercel preview URLs
+and the tailnet release candidate stay silent even if they inherit the
+production variables (candidates copy `.env.local`, so never rely on env alone).
+
+| variable | value |
+| --- | --- |
+| `NEXT_PUBLIC_DEPLOYMENT_ENVIRONMENT` | `production` (anything else disables) |
+| `NEXT_PUBLIC_OPENPANEL_CLIENT_ID` | public OpenPanel client ID for this site (no client secret, ever) |
+| `NEXT_PUBLIC_OPENPANEL_API_URL` | optional; defaults to `https://api.openpanel.dev`, must be HTTPS without credentials or query |
+
+These are public build-time values inlined into the client bundle: set them
+only in the Vercel project's **Production** environment, which the approved
+`promote` build (`vercel deploy --prod` from the candidate's commit) uses, and
+redeploy after changing them. Keep them out of `.env.local`.
+
+Auto-capture, outgoing-link and `data-track` attribute tracking, session
+replay, identify and profiles are all off; an SDK filter drops anything but
+the events below. Page views send origin + path (no query string or hash)
+and the public page title; the referrer is reduced to an external origin. Named events:
+
+| event | properties | fired by |
+| --- | --- | --- |
+| `project_open` | `project` (slug), `source` (`crate`\|`index`) | crate story link, projects page tiles |
+| `project_link_open` | `project` (slug) | detail page "visit project" |
+| `contact_open` | `channel` (`github`\|`x`\|`substack`) | about page links |
+
+Tracking is fire-and-forget and never blocks navigation. Smoke check on
+production: devtools Network filtered to `openpanel` shows a `/track`
+`screen_view` POST on load and `project_open` after opening a record; on the
+tailnet candidate, or with DNT/GPC enabled, the same filter stays empty.

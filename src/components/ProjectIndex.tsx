@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { Project } from '../data/content-types';
+import { trackEvent } from '../lib/analytics';
 import { labelCode } from '../lib/labels';
 import { titleFitStyle } from '../lib/titleFit';
 import AmbientField from './AmbientField';
@@ -64,7 +65,12 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
         aria-labelledby="latest-release-title"
         ref={(node) => { releaseRefs.current[0] = node; }}
       >
-        <Link className="index-hero-link" href={`/projects/${latest.slug}`} {...hoverHandlers(0)}>
+        <Link
+          className="index-hero-link"
+          href={`/projects/${latest.slug}`}
+          onClick={() => trackEvent({ name: 'project_open', project: latest.slug, source: 'index' })}
+          {...hoverHandlers(0)}
+        >
           <div className="index-hero-art" style={{ background: latest.placeholder }}>
             <Image
               src={latest.coverUrl}
@@ -102,7 +108,12 @@ export default function ProjectIndex({ projects }: { projects: Project[] }) {
             const index = offset + 1;
             return (
               <li key={project.slug} ref={(node) => { releaseRefs.current[index] = node; }}>
-                <Link className="record-tile" href={`/projects/${project.slug}`} {...hoverHandlers(index)}>
+                <Link
+                  className="record-tile"
+                  href={`/projects/${project.slug}`}
+                  onClick={() => trackEvent({ name: 'project_open', project: project.slug, source: 'index' })}
+                  {...hoverHandlers(index)}
+                >
                   <span className="record-tile-art" style={{ background: project.placeholder }}>
                     <Image src={project.coverUrl} width={600} height={600} sizes="(min-width: 1100px) 280px, (min-width: 700px) 30vw, 46vw" alt="" />
                   </span>

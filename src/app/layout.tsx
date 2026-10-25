@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Recursive, Syne } from 'next/font/google';
 import '../styles.css';
+import Analytics from '../components/Analytics';
 import JsonLd from '../components/JsonLd';
 import {
   DEFAULT_DESCRIPTION,
@@ -100,6 +101,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en" className={`${recursive.variable} ${syne.variable}`}>
       <body>
+        <Analytics />
         <JsonLd data={organizationData} />
         {children}
       </body>
