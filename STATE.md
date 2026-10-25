@@ -5,9 +5,9 @@ _Bootstrapped 2026-10-24 from closed owner session 01a12848-09c8-7327-b3eb-4791b
 Run the Self-Driving Jazz release site: publish each project as a numbered "SDJ-NNN" record with a front/back album sleeve, a write-up and visit/credits links. Also own SDJ creative side work (cover design, launch films, spikes). jmill.dev has its own owner now, not this project.
 
 ## Current state
-- **Production:** https://www.selfdrivingjazz.com (Vercel; the apex redirects to www). Last promoted candidate is `9a9586f2506a-b837e93e` (commit `9a9586f`, crate mobile layout), promoted 2026-10-22 07:42 UTC.
-- **Branch:** `rc/method-projects-polish` (HEAD `9a9586f`). Remote is `github.com/selfdrivingjazz/selfdrivingjazz.com`.
-- **Tailnet preview:** https://jmill-desktop.tail587341.ts.net:8447 (MTS service `selfdrivingjazz`). It serves committed rc candidates only. Last known: the same build as production [unverified after 2026-10-22].
+- **Production:** https://www.selfdrivingjazz.com (Vercel; the apex redirects to www). Analytics candidate `196076d8cd00-708415e1` (commit `196076d`) promoted 2026-10-24. Browser observed `POST https://api.openpanel.dev/track` **200**; the dashboard Events table received `/` and `session start` rows at 22:21 local dashboard time.
+- **Branch:** `rc/method-projects-polish`; analytics source commit `196076d` is directly atop previously live `9a9586f`. Remote is `github.com/selfdrivingjazz/selfdrivingjazz.com`.
+- **Tailnet preview:** https://jmill-desktop.tail587341.ts.net:8447 (MTS service `selfdrivingjazz`), candidate `196076d8cd00-708415e1`. Browser verified the page loads with zero OpenPanel requests, as required by its canonical-host privacy gate.
 - **Crate order (newest first):** AI 2053 SDJ-020 → vamp SDJ-019 → Ambient Communal Intelligence SDJ-018 → ciaude.ai SDJ-017 → Cuelight SDJ-016 → Art Basil → Introverse → Older Works sleeve. 20 project MDX files.
   - Mulabonding has `crate: 13` and has since been pushed into Older Works.
   - Whalechess has `crate: false` and `live: false`, so it shows no visit button.
@@ -28,7 +28,7 @@ Run the Self-Driving Jazz release site: publish each project as a numbered "SDJ-
 
 ## Open work
 - **Crate mobile layout** (`9a9586f`, live 2026-10-22): tested only at 18 emulated viewports, never on a real iPhone or Safari with its toolbars. Needs a real-device check.
-- **OpenPanel analytics (2026-10-24):** the 2026-10-15 production-only migration is now owned by the released-sites rollout. The existing write-client ID was recovered from the dashboard, and `NEXT_PUBLIC_OPENPANEL_CLIENT_ID` + `NEXT_PUBLIC_DEPLOYMENT_ENVIRONMENT=production` were configured in Vercel Production. Analytics-only production promotion is authorized by jmill's rollout request. The SDK remains disabled on tailnet candidates and with DNT/GPC. Root API credentials for agent-side queries/provisioning are tracked by JMI-38.
+- **OpenPanel analytics (2026-10-24): tracking live.** The existing public write-client ID and production environment are configured in Vercel Production; the canonical `www` origin is now allowed in OpenPanel. Browser `/track` POST **200** and dashboard event arrival are both observed. Root API credentials for direct agent-side queries/provisioning remain tracked by JMI-38; dashboard access already works.
 - **Cuelight screenshot:** add a screenshot of the cuelight.sh site once the domain resolves. It did not resolve on 2026-10-20; Cuelight currently uses controller screenshots. Cuelight's status is "in development".
 - **AI 2053 launch film and 7-post thread** (2026-10-19):
   - Ready on MTS: https://jmill-desktop.tail587341.ts.net/outputs/result-ai2053-launch-film-thread-final-20261019
